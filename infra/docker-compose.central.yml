@@ -1,0 +1,65 @@
+# ==============================================================================
+# AmeniEdge Regional Central Cloud / Command Hub Stack
+# Coordinates multiple stations, harmonizes sync conflicts, regional GIS
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  central-proxy:
+    image: nginx:alpine
+    container_name: ameniedge-central-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-central.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      central-backend:
+        condition: service_healthy
+
+  central-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ameniedge-central-backend
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=central-regional
+      - SERVER_PORT=8080
+      - DB_URL=jdbc:postgresql://central-db:5432/ameniedge_central
+      - DB_USER=ameniedge_central_admin
+      - DB_PASSWORD=ameniedge_central_secure_pass_2026
+      - JWT_SECRET=ameniedge_regional_central_cloud_secret_jwt_key_2026_harmonizer_secure
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      central-db:
+        condition: service_healthy
+
+  central-db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ameniedge-central-db
+    restart: always
+    environment:
+      - POSTGRES_DB=ameniedge_central
+      - POSTGRES_USER=ameniedge_central_admin
+      - POSTGRES_PASSWORD=ameniedge_central_secure_pass_2026
+    volumes:
+      - central_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ameniedge_central_admin -d ameniedge_central"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  central_postgres_data:

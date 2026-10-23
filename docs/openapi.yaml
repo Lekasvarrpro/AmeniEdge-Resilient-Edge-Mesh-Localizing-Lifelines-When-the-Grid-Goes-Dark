@@ -1,0 +1,637 @@
+openapi: 3.0.3
+info:
+  title: AmeniEdge Emergency Rescue Coordination API
+  description: >
+    Offline-first REST and sync API for AmeniEdge emergency reporting, RescueFit explainable dispatch,
+    multi-station mesh synchronization, and offline map layers.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Station Edge Node (Local)
+  - url: https://regional.ameniedge.org/api/v1
+    description: Regional Central Command
+
+paths:
+  /health:
+    get:
+      summary: Station health and mode check
+      description: Returns node identity, operational mode (ISOLATED_EDGE or CENTRAL_REGIONAL), and sync status.
+      responses:
+        '200':
+          description: Health details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /auth/register:
+    post:
+      summary: Register responder, volunteer, or leader
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /incidents:
+    post:
+      summary: Submit Emergency SOS Incident
+      description: Citizens can submit with zero credentials (guest mode) or authenticated.
+      parameters:
+        - in: header
+          name: X-Client-Reference-Id
+          schema:
+            type: string
+            format: uuid
+          description: Client-generated idempotency key for offline queueing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncidentRequest'
+      responses:
+        '201':
+          description: Incident accepted by station
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+    get:
+      summary: Filterable incident queue
+      parameters:
+        - in: query
+          name: station_id
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: priority
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incident'
+
+  /incidents/{id}:
+    get:
+      summary: Retrieve incident details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full incident details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+
+  /incidents/{id}/status:
+    patch:
+      summary: Transition incident status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentStatusUpdate'
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+
+  /incidents/{id}/recommendations:
+    get:
+      summary: RescueFit explainable team recommendations
+      description: Evaluates candidate teams against hard safety filters and soft optimization rankings.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ranked recommendations with explainability report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RescueFitRecommendations'
+
+  /incidents/{id}/assignments:
+    post:
+      summary: Assign team to incident
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+      responses:
+        '201':
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+
+  /assignments/{id}/accept:
+    post:
+      summary: Responder accepts mission assignment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assignment marked ACCEPTED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+
+  /assignments/{id}/decline:
+    post:
+      summary: Responder declines mission assignment with reason
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: Equipment failure during transit
+      responses:
+        '200':
+          description: Assignment marked DECLINED and returned to station queue
+
+  /teams:
+    get:
+      summary: List teams and current readiness
+      responses:
+        '200':
+          description: Teams list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+    post:
+      summary: Create rescue team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        '201':
+          description: Team created
+
+  /stations:
+    get:
+      summary: List edge stations
+      responses:
+        '200':
+          description: Stations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Station'
+
+  /sync/events:
+    post:
+      summary: Synchronize event packet between stations or central
+      description: Idempotent store-and-forward batch ingestion with vector clocks and HMAC verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncBatchRequest'
+      responses:
+        '200':
+          description: Sync batch processed with receipts and conflict status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncBatchResponse'
+    get:
+      summary: Pull pending sync events since cursor
+      parameters:
+        - in: query
+          name: since_sequence
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of sync events
+
+  /maps/tiles/{z}/{x}/{y}:
+    get:
+      summary: Fetch offline OpenStreetMap raster tile
+      parameters:
+        - in: path
+          name: z
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: x
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: y
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PNG tile data
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /maps/layers/shelters:
+    get:
+      summary: GeoJSON list of local emergency shelters
+      responses:
+        '200':
+          description: GeoJSON feature collection
+
+  /maps/layers/hazards:
+    get:
+      summary: GeoJSON list of active hazards (floods, fallen power lines)
+      responses:
+        '200':
+          description: GeoJSON feature collection
+
+  /bulletins:
+    get:
+      summary: Verified civil defense broadcasts
+      responses:
+        '200':
+          description: Bulletin list
+    post:
+      summary: Create bulletin broadcast
+      responses:
+        '201':
+          description: Bulletin published
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        station_id:
+          type: string
+          example: STA-CHN-N-001
+        station_name:
+          type: string
+          example: Station North Command
+        mode:
+          type: string
+          enum: [ISOLATED_EDGE, CENTRAL_REGIONAL]
+        pending_outbox_events:
+          type: integer
+        active_teams_count:
+          type: integer
+        open_incidents_count:
+          type: integer
+        uptime_seconds:
+          type: integer
+
+    RegisterRequest:
+      type: object
+      required: [username, password, full_name, role]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [CITIZEN, RESCUE_MEMBER, VOLUNTEER, STATION_LEADER, REGIONAL_SUPERVISOR, ORG_ADMIN]
+        station_id:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        refresh_token:
+          type: string
+        user_id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+        station_id:
+          type: string
+
+    CreateIncidentRequest:
+      type: object
+      required: [category, affected_people]
+      properties:
+        client_reference_id:
+          type: string
+          format: uuid
+        category:
+          type: string
+          enum: [FLOOD, MEDICAL, FIRE, TRAPPED, MISSING, STRUCTURAL_COLLAPSE, OTHER]
+        details:
+          type: string
+        affected_people:
+          type: integer
+          minimum: 1
+        latitude:
+          type: number
+        longitude:
+          type: number
+        location_landmark:
+          type: string
+        contact_name:
+          type: string
+        contact_phone:
+          type: string
+        has_immediate_danger:
+          type: boolean
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          example: INC-10482
+        client_reference_id:
+          type: string
+        station_id:
+          type: string
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [P1_CRITICAL, P2_URGENT, P3_ROUTINE, P4_MONITORING]
+        status:
+          type: string
+          enum: [QUEUED_OFFLINE, RECEIVED, TRIAGED, ASSIGNED, ACCEPTED, EN_ROUTE, ON_SITE, RESOLVED, CLOSED, ESCALATED, CANCELLED]
+        affected_people:
+          type: integer
+        latitude:
+          type: number
+        longitude:
+          type: number
+        location_landmark:
+          type: string
+        details:
+          type: string
+        assigned_team_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    IncidentStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        note:
+          type: string
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          example: TEAM-CHN-N-001
+        name:
+          type: string
+          example: Swift Water Rescue Alpha
+        station_id:
+          type: string
+        status:
+          type: string
+          enum: [AVAILABLE, BUSY, OFF_DUTY]
+        capabilities:
+          type: array
+          items:
+            type: string
+        equipment:
+          type: array
+          items:
+            type: string
+        current_latitude:
+          type: number
+        current_longitude:
+          type: number
+        active_incident_count:
+          type: integer
+
+    Station:
+      type: object
+      properties:
+        id:
+          type: string
+          example: STA-CHN-N-001
+        name:
+          type: string
+        region_id:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        coverage_radius_meters:
+          type: integer
+
+    RescueFitRecommendations:
+      type: object
+      properties:
+        incident_id:
+          type: string
+        eligible_teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/RescueFitCandidate'
+        excluded_teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/RescueFitExclusion'
+
+    RescueFitCandidate:
+      type: object
+      properties:
+        team_id:
+          type: string
+        team_name:
+          type: string
+        fit_score:
+          type: number
+          example: 0.94
+        eta_minutes:
+          type: integer
+          example: 7
+        distance_meters:
+          type: integer
+          example: 850
+        rationale:
+          type: string
+          example: "Swift-water certified, equipped with inflatable zodiac boat, 0 active missions, ETA 7m"
+
+    RescueFitExclusion:
+      type: object
+      properties:
+        team_id:
+          type: string
+        team_name:
+          type: string
+        exclusion_reason:
+          type: string
+          example: "Missing required equipment: Inflatable Rescue Boat"
+
+    CreateAssignmentRequest:
+      type: object
+      required: [team_id]
+      properties:
+        team_id:
+          type: string
+        notes:
+          type: string
+
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ASN-2041
+        incident_id:
+          type: string
+        team_id:
+          type: string
+        station_id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING_ACK, ACCEPTED, DECLINED, COMPLETED]
+        created_at:
+          type: string
+          format: date-time
+
+    SyncBatchRequest:
+      type: object
+      required: [origin_station_id, events, hmac_signature]
+      properties:
+        origin_station_id:
+          type: string
+        events:
+          type: array
+          items:
+            type: object
+        hmac_signature:
+          type: string
+
+    SyncBatchResponse:
+      type: object
+      properties:
+        processed_count:
+          type: integer
+        conflicts:
+          type: array
+          items:
+            type: object
+        receipts:
+          type: array
+          items:
+            type: string

@@ -1,0 +1,62 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SHL-001",
+        "name": "St. Mary's Higher Secondary School Relief Camp",
+        "station_id": "STA-CHN-N-001",
+        "capacity": 450,
+        "current_occupancy": 128,
+        "has_backup_power": true,
+        "has_drinking_water": true,
+        "has_first_aid_post": true,
+        "contact_officer": "Capt. M. Sundaram",
+        "contact_radio": "VHF-CH-14"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2685, 13.0842]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SHL-002",
+        "name": "Perambur Community Stadium Shelter",
+        "station_id": "STA-CHN-N-001",
+        "capacity": 1200,
+        "current_occupancy": 410,
+        "has_backup_power": true,
+        "has_drinking_water": true,
+        "has_first_aid_post": true,
+        "contact_officer": "Dr. Sarah Paul",
+        "contact_radio": "VHF-CH-16"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2450, 13.1090]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SHL-003",
+        "name": "Mylapore Civic Centre Evacuation Point",
+        "station_id": "STA-CHN-S-002",
+        "capacity": 600,
+        "current_occupancy": 85,
+        "has_backup_power": false,
+        "has_drinking_water": true,
+        "has_first_aid_post": false,
+        "contact_officer": "R. Loganathan",
+        "contact_radio": "VHF-CH-12"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2710, 13.0360]
+      }
+    }
+  ]
+}

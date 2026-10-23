@@ -1,0 +1,157 @@
+/* AmeniEdge Design Tokens: WCAG 2.1 AA Compliant, Mobile-First Emergency Design System */
+
+:root {
+  /* System Font Stack - Zero External Web Fonts */
+  --font-family-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+
+  /* Typography Scale (Base 16px) */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1.0rem;    /* 16px - Minimum form input size to avoid iOS zoom */
+  --font-size-md: 1.125rem;    /* 18px */
+  --font-size-lg: 1.25rem;     /* 20px */
+  --font-size-xl: 1.5rem;      /* 24px */
+  --font-size-2xl: 2.0rem;     /* 32px */
+  --font-size-sos: 2.75rem;    /* 44px */
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.625;
+
+  /* Spacing Grid (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px; /* Minimum touch target */
+  --space-16: 64px;
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  /* Light Theme (Default) */
+  --color-danger: #D92D20;
+  --color-danger-hover: #B42318;
+  --color-danger-bg: #FEF3F2;
+  --color-danger-border: #FECDCA;
+
+  --color-warning: #B54708;
+  --color-warning-hover: #93370D;
+  --color-warning-bg: #FFFAEB;
+  --color-warning-border: #FEDF89;
+
+  --color-success: #079455;
+  --color-success-hover: #067647;
+  --color-success-bg: #ECFDF3;
+  --color-success-border: #A6F4C5;
+
+  --color-info: #175CD3;
+  --color-info-hover: #154AA5;
+  --color-info-bg: #EFF8FF;
+  --color-info-border: #B2DDFF;
+
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F8FAFC;
+  --color-surface-muted: #F1F5F9;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #FFFFFF;
+
+  --color-border: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
+
+  --color-offline-badge: #64748B;
+  --color-focus-ring: #0052CC;
+}
+
+/* Dark Theme (OLED Battery Saver Mode) */
+[data-theme="dark"] {
+  --color-danger: #F97066;
+  --color-danger-hover: #FDA29B;
+  --color-danger-bg: #4E1111;
+  --color-danger-border: #7A271A;
+
+  --color-warning: #FDB022;
+  --color-warning-hover: #FEC84B;
+  --color-warning-bg: #3F2205;
+  --color-warning-border: #7A4608;
+
+  --color-success: #47CD89;
+  --color-success-hover: #75E0A7;
+  --color-success-bg: #052E16;
+  --color-success-border: #085D3A;
+
+  --color-info: #70B3FF;
+  --color-info-hover: #9ECCFF;
+  --color-info-bg: #0B2545;
+  --color-info-border: #1849A9;
+
+  --color-surface: #0F172A;
+  --color-surface-subtle: #1E293B;
+  --color-surface-muted: #334155;
+
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #0F172A;
+
+  --color-border: #334155;
+  --color-border-subtle: #1E293B;
+
+  --color-offline-badge: #94A3B8;
+  --color-focus-ring: #70B3FF;
+}
+
+/* High-Contrast Outdoor / Direct Sunlight Theme */
+[data-theme="high-contrast"] {
+  --color-danger: #CC0000;
+  --color-danger-hover: #990000;
+  --color-danger-bg: #FFFFFF;
+  --color-danger-border: #000000;
+
+  --color-warning: #B35900;
+  --color-warning-hover: #804000;
+  --color-warning-bg: #FFFFFF;
+  --color-warning-border: #000000;
+
+  --color-success: #008000;
+  --color-success-hover: #004D00;
+  --color-success-bg: #FFFFFF;
+  --color-success-border: #000000;
+
+  --color-info: #003399;
+  --color-info-hover: #002266;
+  --color-info-bg: #FFFFFF;
+  --color-info-border: #000000;
+
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #EEEEEE;
+  --color-surface-muted: #DDDDDD;
+
+  --color-text-primary: #000000;
+  --color-text-secondary: #000000;
+  --color-text-muted: #111111;
+  --color-text-inverse: #FFFFFF;
+
+  --color-border: #000000;
+  --color-border-subtle: #000000;
+
+  --color-offline-badge: #000000;
+  --color-focus-ring: #000000;
+}

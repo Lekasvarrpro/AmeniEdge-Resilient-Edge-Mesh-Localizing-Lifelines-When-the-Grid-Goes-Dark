@@ -1,0 +1,64 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "HAZ-001",
+        "title": "Severe Flash Flood - River Otteri Nullah Overflow",
+        "severity": "CRITICAL",
+        "category": "FLOOD_ZONE",
+        "reported_at": "2026-10-23T18:30:00Z",
+        "water_depth_meters": 1.8,
+        "is_passable_by_boat_only": true,
+        "description": "Current speed 4.5 knots. Heavy debris. Vehicular crossing blocked."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2520, 13.0900],
+            [80.2600, 13.0910],
+            [80.2650, 13.0850],
+            [80.2580, 13.0820],
+            [80.2520, 13.0900]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "HAZ-002",
+        "title": "Submerged Bridge - Demonte Colony Culvert",
+        "severity": "HIGH",
+        "category": "ROAD_IMPASSABLE",
+        "reported_at": "2026-10-23T19:15:00Z",
+        "water_depth_meters": 1.2,
+        "is_passable_by_boat_only": false,
+        "description": "Culvert structural integrity compromised. Avoid crossing."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2595, 13.0380]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "HAZ-003",
+        "title": "Downed 11kV Electrical Feeder Cable",
+        "severity": "CRITICAL",
+        "category": "ELECTROCUTION_RISK",
+        "reported_at": "2026-10-23T20:00:00Z",
+        "water_depth_meters": 0.4,
+        "is_passable_by_boat_only": false,
+        "description": "Live wire submerged in pooling water near intersection. High danger!"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2740, 13.0780]
+      }
+    }
+  ]
+}

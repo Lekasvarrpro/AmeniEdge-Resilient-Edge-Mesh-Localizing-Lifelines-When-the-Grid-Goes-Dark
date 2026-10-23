@@ -1,0 +1,83 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: ameniedge-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:ameniedge_dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: false # Set true when pointing to PostgreSQL with Flyway scripts
+
+ameniedge:
+  station:
+    id: ${STATION_ID:STA-CHN-N-001}
+    name: ${STATION_NAME:Station North Command}
+    region-id: ${REGION_ID:REG-CHN-01}
+    mode: ${OPERATIONAL_MODE:ISOLATED_EDGE}
+    latitude: ${DEFAULT_MAP_LAT:13.0827}
+    longitude: ${DEFAULT_MAP_LNG:80.2707}
+  security:
+    jwt-secret: ${JWT_SECRET:ameniedge_default_development_jwt_secret_key_needs_to_be_at_least_32_bytes_long!}
+    jwt-expiration-ms: 86400000 # 24 hours
+    hmac-shared-key: ${STATION_SHARED_HMAC_KEY:ameniedge_mesh_hmac_shared_secret_2026}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: station-edge
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/ameniedge_station;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+ameniedge:
+  station:
+    mode: ISOLATED_EDGE
+
+---
+spring:
+  config:
+    activate:
+      on-profile: central-regional
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ameniedge_central}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+ameniedge:
+  station:
+    mode: CENTRAL_REGIONAL
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:ameniedge_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
