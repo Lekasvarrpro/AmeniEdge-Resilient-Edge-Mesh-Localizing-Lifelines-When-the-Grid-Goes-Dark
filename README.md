@@ -1,3 +1,4 @@
+
 # AmeniEdge
 > **Resilient Edge Mesh. Localizing Lifelines When the Grid Goes Dark.**
 
@@ -51,7 +52,9 @@ sequenceDiagram
 ```
 
 ### Complete 7-Step Citizen Tracker Semantics
+
 Unlike legacy systems that show premature green checkmarks, AmeniEdge uses **four decoupled state dimensions** (`deliveryState`, `assignmentState`, `missionState`, `syncState`) and logs verified timestamps:
+
 1. **Saved on this device**: Moment the phone stores the encrypted SOS outbox payload.
 2. **Received by station**: Verified receipt from station API with station name.
 3. **Waiting for a rescue team**: Live waiting timer; reverts to waiting with decline reason if declined.
@@ -62,65 +65,10 @@ Unlike legacy systems that show premature green checkmarks, AmeniEdge uses **fou
 
 ---
 
-## 2. Monorepo Structure
-
-```
-AmeniEdge/
-├── backend/                # Java 21 + Spring Boot 3 Engine
-│   ├── src/main/java/com/ameniedge/
-│   │   ├── auth/           # Stateless JWT, SecurityConfig, UserPrincipal
-│   │   ├── users/          # User entities, roles, profile management
-│   │   ├── organization/   # Regions, Stations, Teams, Capabilities, Gear
-│   │   ├── incidents/      # Lifecycle machine (RECEIVED -> ASSIGNED -> RESOLVED)
-│   │   ├── assignments/    # Responder task assignments, accept/decline logic
-│   │   ├── rescuefit/      # Rules-based explainable dispatch engine
-│   │   ├── sync/           # Store-and-forward sync protocol, HMAC, conflict rules
-│   │   ├── maps/           # Local tile controller, shelter & hazard layers
-│   │   ├── bulletins/      # Verified civil defense broadcasts
-│   │   ├── volunteers/     # Shift check-in/out, skill directory
-│   │   ├── audit/          # Immutable append-only audit trail
-│   │   └── notifications/  # STOMP WebSocket endpoints & Health diagnostics
-│   ├── src/main/resources/
-│   │   ├── application.yml # Multi-profile config (dev, station-edge, central)
-│   │   └── db/migration/   # Flyway SQL migrations (V1 schema, V2 seed demo data)
-│   └── pom.xml
-├── frontend/               # React 18 + TypeScript + Vite PWA
-│   ├── src/
-│   │   ├── app/            # App shell, role switcher, theme toggle
-│   │   ├── components/ui/  # WCAG 2.1 AA accessible primitives (Button, SOSButton, Card, etc.)
-│   │   ├── features/       # SOS, Triage, RescueFit, Responder Stepper, Offline Map, Admin
-│   │   ├── lib/            # Dexie IndexedDB (outbox), API client, offline synchronizer
-│   │   └── styles/         # CSS tokens (light, dark, high-contrast sunlight)
-│   ├── vite.config.ts      # Workbox service worker precache & tile caching
-│   └── playwright.config.ts# Responsive viewport matrix (320px to 1440px)
-├── infra/                  # Deployment & Hardware Provisioning
-│   ├── docker-compose.station.yml # Station Edge autonomous stack
-│   ├── docker-compose.central.yml # Regional central hub stack
-│   ├── hostapd.conf        # Wi-Fi AP configuration
-│   ├── dnsmasq.conf        # Captive portal DNS wildcard spoofing
-│   ├── setup_station_ap.sh # Linux station auto-provisioning script
-│   └── nginx-edge.conf     # Edge reverse proxy & captive probe redirects
-├── map-data/               # Offline Leaflet Map Data & Tooling
-│   ├── tiles/              # Pre-packaged 256x256 offline emergency PNG tiles
-│   ├── shelters.geojson    # Evacuation centers & relief camps
-│   ├── hazards.geojson     # Active flood inundation & downed power lines
-│   └── generate_offline_tiles.cjs # Offline tile generator & seeder
-└── docs/                   # Architectural & System Specifications
-    ├── SYSTEM_DESIGN.md    # 9 core architectural artifacts & sequence diagrams
-    ├── UI_DESIGN.md        # Mobile-first design tokens, wireframes & a11y budgets
-    ├── ARCHITECTURE.md     # Role permissions matrix & incident state machine
-    ├── DECISIONS.md        # Architecture Decision Records (ADR 001 - 006)
-    ├── TESTING.md          # Test matrices, Playwright projects & scenarios
-    ├── LIMITATIONS.md      # Physical boundaries, GPS constraints, honesty rules
-    ├── DEMO_WALKTHROUGH.md # Step-by-step flood scenario demonstration script
-    └── openapi.yaml        # Full OpenAPI 3.0 specification
-```
-
----
-
 ## 3. Quickstart & Local Development
 
 ### Prerequisites
+
 - Node.js 20+ and Java 21+ (Oracle JDK 21/26)
 - Maven 3.9+ (or `./mvnw`)
 - Docker and Docker Compose (v2.20+)
@@ -132,13 +80,17 @@ AmeniEdge/
 AmeniEdge utilizes PostgreSQL 16 with the PostGIS extension for geospatial radius queries, incident triage proximity, and station coverage mapping.
 
 #### 1. Start the PostGIS Container
+
 ```bash
 docker compose -f infra/docker-compose.dev.yml up -d
 ```
+
 *Starts `postgis/postgis:16-3.4` with a named volume `ameniedge_dev_pgdata`, automatic health check, and mounts Flyway migration/seed scripts.*
 
 #### 2. Verify with `psql` or Database GUI
+
 Connect using any PostgreSQL GUI (pgAdmin, DBeaver) or CLI:
+
 ```bash
 # Connect using psql inside container or locally:
 docker exec -it ameniedge-dev-db psql -U amenedge -d amenedge
@@ -152,7 +104,9 @@ SELECT id, username, role FROM users;
 ```
 
 #### 3. How to Reset the Database
+
 To clear all data, wipe volumes, and re-run migrations from scratch:
+
 ```bash
 docker compose -f infra/docker-compose.dev.yml down -v
 docker compose -f infra/docker-compose.dev.yml up -d
@@ -163,30 +117,39 @@ docker compose -f infra/docker-compose.dev.yml up -d
 ### Running the Backend
 
 #### Option A: Running with Local PostGIS (Dev Profile - Recommended)
+
 Ensure Docker PostGIS is running, then:
+
 ```bash
 cd backend
 mvn clean compile
 mvn spring-boot:run
 ```
+
 *Spring Boot connects to `jdbc:postgresql://localhost:5432/amenedge` (user: `amenedge`, pass: `amenedge`) and runs Flyway migrations automatically.*
 
 #### Option B: Standalone Edge / Offline Mode (Embedded H2)
+
 To run the backend without starting Docker or external PostgreSQL:
+
 ```bash
 cd backend
 mvn spring-boot:run "-Dspring-boot.run.profiles=station-edge"
 ```
+
 *Uses an embedded file-backed H2 engine at `./data/ameniedge_station` with full PostgreSQL compatibility mode.*
 
 #### Configuring the Server Port (Default: 8081)
+
 AmeniEdge defaults to port 8081 to avoid conflict with standard services:
+
 ```bash
 # Set SERVER_PORT or override via command line:
 mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
 ```
 
 #### Verifying Health Endpoints
+
 - **Spring Boot Actuator Health**: `GET http://localhost:8081/actuator/health` (returns `{"status":"UP", ...}`)
 - **AmeniEdge Edge Mesh Diagnostic**: `GET http://localhost:8081/api/v1/health` (returns station operational state, outbox queue count, active responder teams)
 - **Swagger UI Interactive Documentation**: `http://localhost:8081/swagger-ui.html`
@@ -194,14 +157,17 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
 ---
 
 ### Running Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 *Frontend runs at `http://localhost:5173`. Proxies `/api/v1` and `/ws` to backend on port 8081.*
 
 ### Running with Docker Compose
+
 ```bash
 docker compose up --build
 ```
@@ -245,6 +211,7 @@ docker compose up --build
 ### Resetting Demo Data to Pure Clean State
 
 To instantly purge all transactional records (incidents, assignments, tracks, allocations) and reset personnel pools:
+
 ```bash
 # Windows PowerShell
 ./scripts/reset-demo-data.ps1
@@ -258,24 +225,30 @@ To instantly purge all transactional records (incidents, assignments, tracks, al
 ## 5. Verification & Testing
 
 ### Backend Unit & Integration Tests (JUnit 5 + Mockito)
+
 ```bash
 cd backend
 mvn test
 ```
+
 *Executes tests for RescueFit qualification & explainability, Incident state machine transitions, and Store-and-forward sync deduplication & conflict detection.*
 
 ### Frontend Unit Tests (Vitest + React Testing Library)
+
 ```bash
 cd frontend
 npm run test:unit
 ```
+
 *Verifies 3-stage ProgressTracker rendering, design system tokens, and outbox persistence.*
 
 ### Mobile Responsive Integrity (Playwright)
+
 ```bash
 cd frontend
 npx playwright test
 ```
+
 *Verifies 7 mandatory viewports (320x568, 360x800, 390x844, 412x915, 768x1024, 1024x768, 1440x900) ensuring zero horizontal scroll, touch targets >= 48px, and sticky action bar visibility.*
 
 ---
@@ -286,4 +259,3 @@ npx playwright test
 - **Wi-Fi Mesh Reality**: Standard Wi-Fi access points do not form an automatic mesh without specialized routing or physical courier data mules between disconnected stations.
 - **GPS Constraints**: GPS reception requires line-of-sight to satellites and may degrade or fail in collapsed reinforced concrete structures. Manual landmark input is provided as a non-blocking fallback.
 - **Aspirational Targets**: Any reference to "99.99% availability" represents an aspirational engineering target to validate, not a guaranteed service level.
-
