@@ -9,3 +9,4 @@ import java.util.List;
 public interface StationRepository extends JpaRepository<Station, String> {
     List<Station> findByRegionId(String regionId);
 }
+

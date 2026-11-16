@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FiWifi, FiWifiOff, FiRefreshCw, FiInfo, FiX } from 'react-icons/fi';
 import { outboxSync, type ConnectivityState } from '../../lib/offline/outbox';
 
 export const ConnectivityBar: React.FC = () => {
@@ -18,39 +19,43 @@ export const ConnectivityBar: React.FC = () => {
       case 'ONLINE':
       case 'STATION_CONNECTED':
         return {
-          bg: 'var(--color-success-bg)',
-          text: 'var(--color-success)',
-          border: 'var(--color-success-border)',
-          icon: '●',
-          label: 'Station Connected (Local Mesh)',
-          hint: 'Operational offline island',
+          bg: '#FFFFFF',
+          badgeBg: '#ECFDF5',
+          badgeColor: '#047857',
+          badgeBorder: '#A7F3D0',
+          icon: <FiWifi />,
+          label: 'Station Mesh Connected',
+          hint: 'Autonomous edge island active (STA-CHN-N-001)',
         };
       case 'SYNCING':
         return {
-          bg: 'var(--color-warning-bg)',
-          text: 'var(--color-warning)',
-          border: 'var(--color-warning-border)',
-          icon: '◌',
-          label: `Syncing (${pendingCount} pending)`,
-          hint: 'Replaying local outbox to station',
+          bg: '#FFFFFF',
+          badgeBg: '#FFFBEB',
+          badgeColor: '#B45309',
+          badgeBorder: '#FDE68A',
+          icon: <FiRefreshCw style={{ animation: 'spin 1.2s linear infinite' }} />,
+          label: `Syncing Outbox (${pendingCount} pending)`,
+          hint: 'Replaying local transactions to station node',
         };
       case 'SYNC_ERROR':
         return {
-          bg: 'var(--color-danger-bg)',
-          text: 'var(--color-danger)',
-          border: 'var(--color-danger-border)',
-          icon: '▲',
-          label: `Sync Error (${pendingCount} pending) · Tap to retry`,
-          hint: 'Station temporarily unreachable',
+          bg: '#FFFFFF',
+          badgeBg: '#FEF2F2',
+          badgeColor: '#B91C1C',
+          badgeBorder: '#FECACA',
+          icon: <FiWifiOff />,
+          label: `Sync Paused (${pendingCount} pending) · Tap to retry`,
+          hint: 'Station Wi-Fi temporarily out of range',
         };
       case 'OFFLINE_SAVED':
       default:
         return {
-          bg: 'var(--color-surface-subtle)',
-          text: 'var(--color-text-secondary)',
-          border: 'var(--color-border)',
-          icon: '■',
-          label: pendingCount > 0 ? `Offline (${pendingCount} saved on device)` : 'Offline · Stored locally',
+          bg: '#FFFFFF',
+          badgeBg: '#F1F5F9',
+          badgeColor: '#475569',
+          badgeBorder: '#CBD5E1',
+          icon: <FiWifiOff />,
+          label: pendingCount > 0 ? `Offline (${pendingCount} saved on device)` : 'Offline · Stored Locally',
           hint: 'Will auto-deliver when station Wi-Fi connects',
         };
     }
@@ -66,11 +71,10 @@ export const ConnectivityBar: React.FC = () => {
         onClick={() => setShowDetails(true)}
         style={{
           width: '100%',
-          minHeight: '36px',
+          minHeight: '38px',
           padding: '6px 16px',
           backgroundColor: config.bg,
-          color: config.text,
-          borderBottom: `1px solid ${config.border}`,
+          borderBottom: '1px solid var(--color-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -80,15 +84,38 @@ export const ConnectivityBar: React.FC = () => {
           userSelect: 'none',
           boxSizing: 'border-box',
           zIndex: 1000,
+          transition: 'background var(--transition-fast)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '10px' }}>{config.icon}</span>
-          <span>{config.label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: config.badgeBg,
+              color: config.badgeColor,
+              border: `1px solid ${config.badgeBorder}`,
+              fontSize: '11px',
+              fontWeight: 700,
+            }}
+          >
+            {config.icon}
+            <span>{config.label}</span>
+          </span>
+          <span
+            className="mobile-hide"
+            style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}
+          >
+            {config.hint}
+          </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ opacity: 0.8 }}>Details ▾</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)', fontSize: '12px' }}>
+          <span>Mesh Status</span>
+          <FiInfo aria-hidden="true" />
         </div>
       </div>
 
@@ -102,7 +129,8 @@ export const ConnectivityBar: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(8px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -114,45 +142,48 @@ export const ConnectivityBar: React.FC = () => {
           <div
             style={{
               backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text-primary)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              maxWidth: '400px',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-2xl)',
+              padding: '28px',
+              maxWidth: '420px',
               width: '100%',
               boxShadow: 'var(--shadow-lg)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px',
+              gap: '18px',
+              color: 'var(--color-text-primary)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 700 }}>Connection Status</h3>
+              <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 800 }}>Mesh Network Diagnostic</h3>
               <button
                 onClick={() => setShowDetails(false)}
+                aria-label="Close diagnostic dialog"
                 style={{
                   background: 'none',
                   border: 'none',
                   fontSize: '20px',
                   cursor: 'pointer',
                   color: 'var(--color-text-secondary)',
+                  display: 'flex',
                 }}
               >
-                ✕
+                <FiX />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: 'var(--font-size-sm)' }}>
-              <div><strong>Status:</strong> {config.label}</div>
-              <div><strong>Pending Outbox Mutations:</strong> {pendingCount}</div>
-              <div><strong>Mesh Station:</strong> Station North Command (STA-CHN-N-001)</div>
-              <div><strong>Network Mode:</strong> Autonomous Edge Island</div>
-              <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)' }}>
-                {config.hint}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: 'var(--font-size-sm)' }}>
+              <div><strong>Connection:</strong> {config.label}</div>
+              <div><strong>Local Outbox Queue:</strong> {pendingCount} events buffered in IndexedDB</div>
+              <div><strong>Assigned Node:</strong> Station North Command (`STA-CHN-N-001`)</div>
+              <div><strong>Captive Portal DNS:</strong> `192.168.4.1` (Offline Wildcard)</div>
+              <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', marginTop: '4px' }}>
+                All mutations and SOS alerts are written locally first with cryptographic UUIDs. When any mesh path or courier mule connects, events synchronize automatically.
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
                 onClick={() => {
                   outboxSync.flushOutbox();
@@ -160,25 +191,26 @@ export const ConnectivityBar: React.FC = () => {
                 }}
                 style={{
                   flex: 1,
-                  padding: '10px',
+                  padding: '12px',
                   borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-info)',
+                  background: 'var(--color-primary-gradient)',
                   color: '#ffffff',
-                  border: 'none',
-                  fontWeight: 600,
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                Force Sync Outbox
+                Trigger Outbox Flush
               </button>
               <button
                 onClick={() => setShowDetails(false)}
                 style={{
-                  padding: '10px 16px',
+                  padding: '12px 20px',
                   borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface-subtle)',
-                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface-circle)',
+                  color: '#ffffff',
                   border: '1px solid var(--color-border)',
+                  fontWeight: 600,
                   cursor: 'pointer',
                 }}
               >
@@ -188,6 +220,12 @@ export const ConnectivityBar: React.FC = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 640px) {
+          .mobile-hide { display: none !important; }
+        }
+      `}</style>
     </>
   );
 };

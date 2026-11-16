@@ -1,7 +1,9 @@
 package com.ameniedge.incidents;
 
+import com.ameniedge.assignments.AssignmentRepository;
 import com.ameniedge.incidents.dto.CreateIncidentRequest;
-import com.ameniedge.incidents.dto.IncidentStatusUpdate;
+import com.ameniedge.organization.TeamRepository;
+import com.ameniedge.rescuefit.RescueFitEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,11 +26,19 @@ class IncidentLifecycleTest {
     @Mock
     private IncidentEventRepository eventRepository;
 
+    @Mock
+    private AssignmentRepository assignmentRepository;
+
+    @Mock
+    private TeamRepository teamRepository;
+
+    private RescueFitEngine rescueFitEngine;
     private IncidentService incidentService;
 
     @BeforeEach
     void setUp() {
-        incidentService = new IncidentService(incidentRepository, eventRepository, "STA-CHN-N-001");
+        rescueFitEngine = new RescueFitEngine(teamRepository);
+        incidentService = new IncidentService(incidentRepository, eventRepository, assignmentRepository, teamRepository, rescueFitEngine, "STA-CHN-N-001");
     }
 
     @Test
@@ -72,5 +81,29 @@ class IncidentLifecycleTest {
 
         assertThatThrownBy(() -> incidentService.validateTransition(IncidentStatus.EN_ROUTE, IncidentStatus.CLOSED))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("getReportTracker returns granular decoupled states without premature acceptance")
+    void reportTrackerDecoupledStates() {
+        Incident incident = new Incident();
+        incident.setId("INC-9999");
+        incident.setCategory(IncidentCategory.FLOOD);
+        incident.setDeliveryState(DeliveryState.RECEIVED_BY_STATION);
+        incident.setAssignmentState(AssignmentState.OFFERED);
+        incident.setMissionState(MissionState.WAITING);
+        incident.setSyncState(SyncState.SYNCED);
+        incident.setStationName("South Station Base");
+        incident.setDepartmentName("Flood Rescue Department");
+
+        when(incidentRepository.findById("INC-9999")).thenReturn(Optional.of(incident));
+
+        com.ameniedge.incidents.dto.ReportTrackerDto tracker = incidentService.getReportTracker("INC-9999");
+        assertThat(tracker.getDeliveryState()).isEqualTo(DeliveryState.RECEIVED_BY_STATION);
+        assertThat(tracker.getAssignmentState()).isEqualTo(AssignmentState.OFFERED);
+        assertThat(tracker.getMissionState()).isEqualTo(MissionState.WAITING);
+        assertThat(tracker.getSyncState()).isEqualTo(SyncState.SYNCED);
+        assertThat(tracker.getAcceptedAt()).isNull();
+        assertThat(tracker.getResolvedAt()).isNull();
     }
 }

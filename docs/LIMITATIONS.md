@@ -50,3 +50,12 @@
 - **Station Mutual Authentication**: While TLS protects communications within the station subnet, stations operating disconnected from internet Certificate Authorities must rely on pre-shared trusted station keys or a private regional Root CA.
 - **Shared Field Devices**: Responders sharing mobile devices in the field must adhere to rapid PIN/passcode lock procedures to prevent unauthorized status changes.
 - **Sensitive Victim Data**: Exact victim coordinates and medical notes are never exposed in public broadcasts or citizen dashboards. They are strictly restricted to authenticated rescue personnel and station commanders.
+
+---
+
+## 6. Automated Mission Lifecycles and Field Verification Honesty Disclosure
+
+- **Simulation vs. Real Field Rescues**: The automated countdown timer and simulated progression (Dispatched -> En Route -> On Site -> Working -> Resolved) provide operational pacing and realistic queue cycling for simulation, testing, and training environments.
+- **Limitations of Timers**: In a real disaster, a timer expiring does **not** prove that victims have been extracted, stabilized, or evacuated safely. Real operations encounter unforeseen obstacles, trapped secondary casualties, impassable debris, or worsening weather conditions.
+- **Field Confirmation Setting**: AmeniEdge includes an explicit setting: `"Require field confirmation before auto-closing"`. When enabled on a mission, the system suspends automated resolution and requires explicit manual confirmation with an outcome report from the field responder before archiving the assignment and releasing personnel.
+

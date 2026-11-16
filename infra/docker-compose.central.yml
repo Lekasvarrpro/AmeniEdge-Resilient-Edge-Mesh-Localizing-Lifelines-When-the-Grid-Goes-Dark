@@ -63,3 +63,4 @@ services:
 
 volumes:
   central_postgres_data:
+

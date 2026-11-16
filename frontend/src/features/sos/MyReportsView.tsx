@@ -4,6 +4,7 @@ import { StatusBadge, PriorityBadge } from '../../components/ui/StatusBadge';
 import { ProgressTracker } from '../../components/ui/ProgressTracker';
 import { db, type LocalReport } from '../../lib/db/index';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { FiClipboard, FiMapPin } from 'react-icons/fi';
 
 export interface MyReportsViewProps {
   onSelectReport: (report: LocalReport) => void;
@@ -54,7 +55,7 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({ onSelectReport, on
 
       {!reports || reports.length === 0 ? (
         <Card variant="subtle" style={{ textAlign: 'center', padding: '32px 16px' }}>
-          <span style={{ fontSize: '32px' }}>📋</span>
+          <FiClipboard style={{ fontSize: '32px', color: 'var(--color-text-secondary)', margin: '0 auto' }} aria-hidden="true" />
           <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 700, marginTop: '8px' }}>
             No Active Emergency Reports
           </h3>
@@ -78,9 +79,15 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({ onSelectReport, on
                 <PriorityBadge priority={rep.priority} />
               </div>
 
-              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                📍 {rep.location_landmark || 'Coordinates available'}
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiMapPin aria-hidden="true" /> {rep.location_landmark || 'Coordinates available'}
               </div>
+
+              {rep.routing_notice && (
+                <div style={{ fontSize: '11px', color: 'var(--color-primary)', fontWeight: 600 }}>
+                  {rep.routing_notice}
+                </div>
+              )}
 
               <ProgressTracker
                 currentStage={rep.stage}
@@ -97,3 +104,4 @@ export const MyReportsView: React.FC<MyReportsViewProps> = ({ onSelectReport, on
     </div>
   );
 };
+

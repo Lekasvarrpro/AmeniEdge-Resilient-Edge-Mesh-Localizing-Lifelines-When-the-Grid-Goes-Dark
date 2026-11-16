@@ -6,6 +6,9 @@ import { NumberStepper } from '../../components/ui/NumberStepper';
 import { Toggle } from '../../components/ui/Toggle';
 import { outboxSync } from '../../lib/offline/outbox';
 import type { LocalReport } from '../../lib/db/index';
+import { FiX, FiAlertTriangle } from 'react-icons/fi';
+import { FaWater, FaAmbulance, FaFire, FaHouseDamage } from 'react-icons/fa';
+import { MdConstruction, MdEmergency } from 'react-icons/md';
 
 export interface SOSWizardViewProps {
   initialCategory?: string;
@@ -26,6 +29,8 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
   const [longitude, setLongitude] = useState<number>(80.2707);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [locationLandmark, setLocationLandmark] = useState<string>('');
+  const [stationId, setStationId] = useState<string>('STA-CHN-N-001');
+  const [region, setRegion] = useState<string>('North');
   const [details, setDetails] = useState<string>('');
   const [contactName, setContactName] = useState<string>('');
   const [contactPhone, setContactPhone] = useState<string>('');
@@ -96,6 +101,8 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
         contactName,
         contactPhone,
         hasImmediateDanger,
+        stationId: stationId || undefined,
+        region: region || undefined,
       });
       onComplete(createdReport);
     } finally {
@@ -136,7 +143,7 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
             padding: '8px',
           }}
         >
-          ✕ Cancel
+          <FiX style={{ marginRight: '4px' }} /> Cancel
         </button>
         <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700 }}>
           Step {step} of 4: {step === 1 ? 'Category' : step === 2 ? 'Victims' : step === 3 ? 'Location' : 'Review'}
@@ -165,12 +172,12 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>Select Emergency Category</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
               {[
-                { id: 'FLOOD', label: 'Flood / Water', icon: '🌊' },
-                { id: 'MEDICAL', label: 'Medical Emergency', icon: '🚑' },
-                { id: 'FIRE', label: 'Fire Outbreak', icon: '🔥' },
-                { id: 'TRAPPED', label: 'Trapped Casualties', icon: '🏚️' },
-                { id: 'STRUCTURAL_COLLAPSE', label: 'Building Collapse', icon: '🏗️' },
-                { id: 'OTHER', label: 'Other Hazard', icon: '⚠️' },
+                { id: 'FLOOD', label: 'Flood / Water', icon: <FaWater /> },
+                { id: 'MEDICAL', label: 'Medical Emergency', icon: <FaAmbulance /> },
+                { id: 'FIRE', label: 'Fire Outbreak', icon: <FaFire /> },
+                { id: 'TRAPPED', label: 'Trapped Casualties', icon: <FaHouseDamage /> },
+                { id: 'STRUCTURAL_COLLAPSE', label: 'Building Collapse', icon: <MdConstruction /> },
+                { id: 'OTHER', label: 'Other Hazard', icon: <FiAlertTriangle /> },
               ].map((c) => (
                 <button
                   key={c.id}
@@ -237,7 +244,85 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
 
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>Location Information</h2>
+            <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>Location & Area Selection</h2>
+
+            {/* Region / Area Selection Chips */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+                Select Your Region (Direct Routing)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {[
+                  { id: 'North', label: 'North (Anna Nagar)', stationId: 'STA-CHN-N-001', lat: 13.0827, lng: 80.2707 },
+                  { id: 'South', label: 'South (Tambaram)', stationId: 'STA-CHN-S-002', lat: 12.9249, lng: 80.1000 },
+                  { id: 'East', label: 'East (Royapuram)', stationId: 'STA-CHN-E-003', lat: 13.1143, lng: 80.2974 },
+                  { id: 'West', label: 'West (Ambattur)', stationId: 'STA-CHN-W-004', lat: 13.1147, lng: 80.1548 },
+                ].map((r) => {
+                  const isSelected = region === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => {
+                        setRegion(r.id);
+                        setStationId(r.stationId);
+                        setLatitude(r.lat);
+                        setLongitude(r.lng);
+                      }}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: isSelected ? 'var(--color-primary-bg, #EFF6FF)' : 'var(--color-surface)',
+                        color: isSelected ? 'var(--color-primary, #2563EB)' : 'var(--color-text-primary)',
+                        border: isSelected ? '2px solid var(--color-primary, #2563EB)' : '1px solid var(--color-border)',
+                        fontSize: 'var(--font-size-xs)',
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRegion('');
+                  setStationId('');
+                  if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        setLatitude(pos.coords.latitude);
+                        setLongitude(pos.coords.longitude);
+                        setGpsAccuracy(Math.round(pos.coords.accuracy));
+                      },
+                      () => {},
+                      { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                  }
+                }}
+                style={{
+                  marginTop: '4px',
+                  padding: '10px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: region === '' ? 'var(--color-primary-bg, #EFF6FF)' : 'var(--color-surface)',
+                  color: region === '' ? 'var(--color-primary, #2563EB)' : 'var(--color-text-secondary)',
+                  border: region === '' ? '2px solid var(--color-primary, #2563EB)' : '1px dashed var(--color-border)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: region === '' ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                Use my GPS location (Auto-Route)
+              </button>
+            </div>
 
             <Card variant="subtle">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -248,10 +333,43 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
                   {latitude.toFixed(5)}, {longitude.toFixed(5)}
                 </span>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: gpsAccuracy ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-                  {gpsAccuracy ? `Accuracy: +/- ${gpsAccuracy} meters` : 'Default station center (GPS offline)'}
+                  {gpsAccuracy ? `Accuracy: +/- ${gpsAccuracy} meters` : (region ? `Preset for ${region} Sector` : 'Default station coordinates')}
                 </span>
               </div>
             </Card>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+                Nearest Station / Coverage Sector
+              </label>
+              <select
+                value={stationId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setStationId(val);
+                  if (val === 'STA-CHN-N-001') setRegion('North');
+                  else if (val === 'STA-CHN-S-002') setRegion('South');
+                  else if (val === 'STA-CHN-E-003') setRegion('East');
+                  else if (val === 'STA-CHN-W-004') setRegion('West');
+                  else setRegion('');
+                }}
+                style={{
+                  padding: '10px 14px',
+                  fontSize: 'var(--font-size-base)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text-primary)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <option value="">Auto-Route (Based on Proximity / GPS)</option>
+                <option value="STA-CHN-N-001">North Station - Anna Nagar</option>
+                <option value="STA-CHN-S-002">South Station - Tambaram</option>
+                <option value="STA-CHN-E-003">East Station - Royapuram</option>
+                <option value="STA-CHN-W-004">West Station - Ambattur</option>
+              </select>
+            </div>
 
             <Input
               label="Landmark / Floor / Specific Location"
@@ -290,6 +408,7 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
             <Card variant="urgent">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div><strong>Category:</strong> {category}</div>
+                <div><strong>Assigned Region:</strong> {region || 'GPS Auto-Detected'}</div>
                 <div><strong>Victims:</strong> {affectedPeople} people</div>
                 <div><strong>Urgency:</strong> {hasImmediateDanger ? 'CRITICAL (Immediate Danger)' : 'Standard Urgency'}</div>
                 <div><strong>Location:</strong> {locationLandmark || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}</div>
@@ -359,10 +478,11 @@ export const SOSWizardView: React.FC<SOSWizardViewProps> = ({
             onClick={handleSubmit}
             style={{ flex: 2 }}
           >
-            🚨 SEND SOS NOW
+            <MdEmergency style={{ marginRight: '6px' }} /> SEND SOS NOW
           </Button>
         )}
       </div>
     </div>
   );
 };
+

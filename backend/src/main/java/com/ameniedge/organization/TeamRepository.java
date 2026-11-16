@@ -10,3 +10,4 @@ public interface TeamRepository extends JpaRepository<Team, String> {
     List<Team> findByStationId(String stationId);
     List<Team> findByStationIdAndStatus(String stationId, TeamStatus status);
 }
+

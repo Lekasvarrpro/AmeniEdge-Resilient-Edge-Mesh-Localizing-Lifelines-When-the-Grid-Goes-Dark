@@ -23,12 +23,15 @@ export interface LocalReport {
   latitude?: number;
   longitude?: number;
   location_landmark?: string;
+  region?: string;
   details?: string;
   contact_name?: string;
   contact_phone?: string;
   stage: ReportStage;
   server_status?: string;
   assigned_team_name?: string;
+  station_name?: string;
+  routing_notice?: string;
   created_at: number;
   synced_at?: number;
 }
@@ -65,7 +68,17 @@ class AmeniEdgeDatabase extends Dexie {
       cachedResources: 'id, type, updated_at',
       authSessions: 'userId, role, lastActive',
     });
+    this.version(2).stores({
+      outbox: 'client_reference_id, status, created_at',
+      reports: 'client_reference_id, id, stage, created_at',
+      cachedResources: 'id, type, updated_at',
+      authSessions: 'userId, role, lastActive',
+    }).upgrade(async (tx) => {
+      await tx.table('outbox').clear();
+      await tx.table('reports').clear();
+    });
   }
 }
 
 export const db = new AmeniEdgeDatabase();
+

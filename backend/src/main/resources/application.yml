@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
   servlet:
     context-path: /
 
@@ -7,10 +7,10 @@ spring:
   application:
     name: ameniedge-backend
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:station-edge}
 
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:ameniedge_dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL}
+    url: ${DB_URL:jdbc:h2:file:./data/ameniedge_station;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
     username: ${DB_USER:sa}
     password: ${DB_PASSWORD:}
     driver-class-name: ${DB_DRIVER:org.h2.Driver}
@@ -18,14 +18,31 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
     show-sql: false
     properties:
       hibernate:
         format_sql: false
 
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
   flyway:
-    enabled: false # Set true when pointing to PostgreSQL with Flyway scripts
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
 
 ameniedge:
   station:
@@ -44,16 +61,20 @@ ameniedge:
 spring:
   config:
     activate:
-      on-profile: station-edge
+      on-profile: dev
   datasource:
-    url: ${DB_URL:jdbc:h2:file:./data/ameniedge_station;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
-    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/amenedge}
+    username: ${DB_USER:amenedge}
+    password: ${DB_PASSWORD:amenedge}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+  flyway:
+    enabled: true
 ameniedge:
   station:
-    mode: ISOLATED_EDGE
+    mode: CENTRAL_REGIONAL
 
 ---
 spring:
@@ -61,11 +82,15 @@ spring:
     activate:
       on-profile: central-regional
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/ameniedge_central}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/amenedge}
+    username: ${DB_USER:amenedge}
+    password: ${DB_PASSWORD:amenedge}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+  flyway:
+    enabled: true
 ameniedge:
   station:
     mode: CENTRAL_REGIONAL
@@ -78,6 +103,10 @@ spring:
   datasource:
     url: jdbc:h2:mem:ameniedge_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
   jpa:
     hibernate:
       ddl-auto: create-drop
+  flyway:
+    enabled: false

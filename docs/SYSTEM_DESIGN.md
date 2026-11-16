@@ -326,3 +326,4 @@ flowchart LR
   - `Live (WebSocket Connected)` (Green beacon)
   - `Delayed (HTTP Polling Active)` (Amber beacon)
   - `Offline (Local Outbox Active)` (Neutral gray beacon with pending badge count)
+

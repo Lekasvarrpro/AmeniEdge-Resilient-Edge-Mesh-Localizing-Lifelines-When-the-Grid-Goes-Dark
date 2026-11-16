@@ -57,3 +57,4 @@ public class HealthController {
         return ResponseEntity.ok(ApiResponse.ok("Station operational", health));
     }
 }
+

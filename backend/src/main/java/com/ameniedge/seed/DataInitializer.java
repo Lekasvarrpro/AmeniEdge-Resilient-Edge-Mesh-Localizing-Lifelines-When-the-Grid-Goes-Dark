@@ -2,11 +2,6 @@ package com.ameniedge.seed;
 
 import com.ameniedge.bulletins.Bulletin;
 import com.ameniedge.bulletins.BulletinRepository;
-import com.ameniedge.incidents.Incident;
-import com.ameniedge.incidents.IncidentCategory;
-import com.ameniedge.incidents.IncidentPriority;
-import com.ameniedge.incidents.IncidentRepository;
-import com.ameniedge.incidents.IncidentStatus;
 import com.ameniedge.organization.*;
 import com.ameniedge.users.Role;
 import com.ameniedge.users.User;
@@ -22,8 +17,8 @@ public class DataInitializer implements CommandLineRunner {
     private final StationRepository stationRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
-    private final IncidentRepository incidentRepository;
     private final BulletinRepository bulletinRepository;
+    private final DepartmentCapacityRepository capacityRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
@@ -31,193 +26,227 @@ public class DataInitializer implements CommandLineRunner {
             StationRepository stationRepository,
             TeamRepository teamRepository,
             UserRepository userRepository,
-            IncidentRepository incidentRepository,
             BulletinRepository bulletinRepository,
+            DepartmentCapacityRepository capacityRepository,
             PasswordEncoder passwordEncoder) {
         this.regionRepository = regionRepository;
         this.stationRepository = stationRepository;
         this.teamRepository = teamRepository;
         this.userRepository = userRepository;
-        this.incidentRepository = incidentRepository;
         this.bulletinRepository = bulletinRepository;
+        this.capacityRepository = capacityRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
-        if (regionRepository.count() > 0) {
-            return; // Data already exists
+        // Ensure stations, teams, capacities and users are always updated to the latest standard names
+        seedStations();
+        seedTeamsAndUsers();
+        seedDepartmentCapacities();
+
+        if (regionRepository.count() == 0) {
+            Region region = new Region("REG-CHN-01", "Chennai Metropolitan Disaster Zone", "Coastal district subject to monsoonal cyclonic flooding");
+            regionRepository.save(region);
         }
 
-        // 1. Region
-        Region region = new Region("REG-CHN-01", "Chennai Metropolitan Disaster Zone", "Coastal district subject to monsoonal cyclonic flooding");
-        regionRepository.save(region);
+        if (bulletinRepository.count() == 0) {
+            Bulletin b1 = new Bulletin(
+                    "BLT-001",
+                    "North Station Wi-Fi Operational - Emergency Mesh Active",
+                    "Cellular towers offline across North Chennai. Station Wi-Fi is active on backup power. Submit SOS or visit Anna Nagar Relief Camp.",
+                    "INFO",
+                    "STA-CHN-N-001",
+                    "USR-LDR-N-01"
+            );
+            Bulletin b2 = new Bulletin(
+                    "BLT-002",
+                    "Urgent Flood Alert: River Otteri Overflowing",
+                    "Otteri Nullah water levels exceeding danger mark by 1.8m. Evacuate low-lying ground floors immediately.",
+                    "DANGER",
+                    "STA-CHN-N-001",
+                    "USR-LDR-N-01"
+            );
+            bulletinRepository.save(b1);
+            bulletinRepository.save(b2);
+        }
+    }
 
-        // 2. Stations
-        Station stationNorth = new Station("STA-CHN-N-001", "Station North Command (Royapuram)", "REG-CHN-01", 13.0827, 80.2707, 6000);
-        Station stationSouth = new Station("STA-CHN-S-002", "Station South Command (Mylapore)", "REG-CHN-01", 13.0360, 80.2675, 5000);
-        stationRepository.save(stationNorth);
-        stationRepository.save(stationSouth);
+    private void seedStations() {
+        saveOrUpdateStation("STA-CHN-N-001", "North Station - Anna Nagar", "REG-CHN-N", 13.0827, 80.2707, 6000);
+        saveOrUpdateStation("STA-CHN-S-002", "South Station - Tambaram", "REG-CHN-S", 13.0360, 80.2675, 6000);
+        saveOrUpdateStation("STA-CHN-E-003", "East Station - Royapuram", "REG-CHN-E", 13.1143, 80.2974, 6000);
+        saveOrUpdateStation("STA-CHN-W-004", "West Station - Ambattur", "REG-CHN-W", 13.1147, 80.1548, 6000);
+    }
 
-        // 3. Users
-        String encodedPass = passwordEncoder.encode("password123");
-
-        User admin = new User("USR-ADM-001", "admin", encodedPass, "Executive Director Sharma", Role.ORG_ADMIN, null);
-        admin.setSkills("ADMIN_GOVERNANCE,AUDIT_AUDITOR");
-        userRepository.save(admin);
-
-        User supervisor = new User("USR-SUP-001", "supervisor", encodedPass, "District Supervisor Priya Raman", Role.REGIONAL_SUPERVISOR, null);
-        supervisor.setSkills("INCIDENT_COMMAND,CROSS_STATION_COORDINATION");
-        userRepository.save(supervisor);
-
-        User leaderNorth = new User("USR-LDR-001", "leader_north", encodedPass, "Commander Vikram Seth", Role.STATION_LEADER, "STA-CHN-N-001");
-        leaderNorth.setSkills("TACTICAL_COMMAND,RESCUEFIT_DISPATCH");
-        userRepository.save(leaderNorth);
-
-        User leaderSouth = new User("USR-LDR-002", "leader_south", encodedPass, "Commander Ananya Roy", Role.STATION_LEADER, "STA-CHN-S-002");
-        leaderSouth.setSkills("TACTICAL_COMMAND,RESCUEFIT_DISPATCH");
-        userRepository.save(leaderSouth);
-
-        User rescueAlpha = new User("USR-RSC-001", "rescue_alpha", encodedPass, "Officer Rajesh Kumar", Role.RESCUE_MEMBER, "STA-CHN-N-001");
-        rescueAlpha.setSkills("SWIFT_WATER_RESCUE,BOAT_OPERATOR,FIRST_AID");
-        userRepository.save(rescueAlpha);
-
-        User rescueBeta = new User("USR-RSC-002", "rescue_beta", encodedPass, "Officer Suresh Mani", Role.RESCUE_MEMBER, "STA-CHN-N-001");
-        rescueBeta.setSkills("STRUCTURAL_COLLAPSE,TRIAGE,DEBRIS_REMOVAL");
-        userRepository.save(rescueBeta);
-
-        User volunteerMaya = new User("USR-VOL-001", "volunteer_maya", encodedPass, "Maya Venkat", Role.VOLUNTEER, "STA-CHN-N-001");
-        volunteerMaya.setSkills("EMT_BASIC,SHELTER_MANAGEMENT");
-        userRepository.save(volunteerMaya);
-
-        User citizenArun = new User("USR-CTZ-001", "citizen_arun", encodedPass, "Arun Krishnan", Role.CITIZEN, null);
-        userRepository.save(citizenArun);
-
-        // 4. Teams
-        Team teamAlpha = new Team(
-                "TEAM-CHN-N-001",
-                "Swift Water Alpha",
-                "STA-CHN-N-001",
-                "USR-RSC-001",
-                TeamStatus.AVAILABLE,
-                "SWIFT_WATER_RESCUE,BOAT_OPERATION,FIRST_AID",
-                "INFLATABLE_ZODIAC_BOAT,LIFE_JACKETS,ROPES",
-                13.0850,
-                80.2690
+    private void saveOrUpdateStation(String id, String name, String regionId, double lat, double lng, int radius) {
+        stationRepository.findById(id).ifPresentOrElse(
+                st -> {
+                    st.setName(name);
+                    st.setLatitude(lat);
+                    st.setLongitude(lng);
+                    st.setCoverageRadiusMeters(radius);
+                    stationRepository.save(st);
+                },
+                () -> {
+                    Station st = new Station(id, name, regionId, lat, lng, radius);
+                    stationRepository.save(st);
+                }
         );
-        teamRepository.save(teamAlpha);
+    }
 
-        Team teamBeta = new Team(
-                "TEAM-CHN-N-002",
-                "Urban Search & Extrication Beta",
-                "STA-CHN-N-001",
-                "USR-RSC-002",
-                TeamStatus.AVAILABLE,
-                "STRUCTURAL_SEARCH,TRIAGE,DEBRIS_CLEARING",
-                "HYDRAULIC_CUTTERS,THERMAL_IMAGER,STRETCHERS",
-                13.0810,
-                80.2730
+    private void seedDepartmentCapacities() {
+        if (capacityRepository == null) return;
+        // North
+        saveOrUpdateCapacity("CAP-CHN-N-001", "TEAM-CHN-N-001", "STA-CHN-N-001", "Flood Rescue Department - North Station", "FLOOD", 120);
+        saveOrUpdateCapacity("CAP-CHN-N-002", "TEAM-CHN-N-002", "STA-CHN-N-001", "Fire Response Department - North Station", "FIRE", 150);
+        saveOrUpdateCapacity("CAP-CHN-N-003", "TEAM-CHN-N-003", "STA-CHN-N-001", "Emergency Medical Department - North Station", "MEDICAL", 100);
+        saveOrUpdateCapacity("CAP-CHN-N-004", "TEAM-CHN-N-004", "STA-CHN-N-001", "Search & Rescue Department - North Station", "TRAPPED", 200);
+
+        // South
+        saveOrUpdateCapacity("CAP-CHN-S-001", "TEAM-CHN-S-001", "STA-CHN-S-002", "Flood Rescue Department - South Station", "FLOOD", 100);
+        saveOrUpdateCapacity("CAP-CHN-S-002", "TEAM-CHN-S-002", "STA-CHN-S-002", "Emergency Medical Department - South Station", "MEDICAL", 120);
+        saveOrUpdateCapacity("CAP-CHN-S-003", "TEAM-CHN-S-003", "STA-CHN-S-002", "Fire Response Department - South Station", "FIRE", 140);
+        saveOrUpdateCapacity("CAP-CHN-S-004", "TEAM-CHN-S-004", "STA-CHN-S-002", "Search & Rescue Department - South Station", "TRAPPED", 160);
+
+        // East
+        saveOrUpdateCapacity("CAP-CHN-E-001", "TEAM-CHN-E-001", "STA-CHN-E-003", "Flood Rescue Department - East Station", "FLOOD", 110);
+        saveOrUpdateCapacity("CAP-CHN-E-002", "TEAM-CHN-E-002", "STA-CHN-E-003", "Fire Response Department - East Station", "FIRE", 130);
+        saveOrUpdateCapacity("CAP-CHN-E-003", "TEAM-CHN-E-003", "STA-CHN-E-003", "Emergency Medical Department - East Station", "MEDICAL", 90);
+        saveOrUpdateCapacity("CAP-CHN-E-004", "TEAM-CHN-E-004", "STA-CHN-E-003", "Search & Rescue Department - East Station", "TRAPPED", 150);
+
+        // West
+        saveOrUpdateCapacity("CAP-CHN-W-001", "TEAM-CHN-W-001", "STA-CHN-W-004", "Flood Rescue Department - West Station", "FLOOD", 115);
+        saveOrUpdateCapacity("CAP-CHN-W-002", "TEAM-CHN-W-002", "STA-CHN-W-004", "Fire Response Department - West Station", "FIRE", 145);
+        saveOrUpdateCapacity("CAP-CHN-W-003", "TEAM-CHN-W-003", "STA-CHN-W-004", "Emergency Medical Department - West Station", "MEDICAL", 95);
+        saveOrUpdateCapacity("CAP-CHN-W-004", "TEAM-CHN-W-004", "STA-CHN-W-004", "Search & Rescue Department - West Station", "TRAPPED", 175);
+    }
+
+    private void saveOrUpdateCapacity(String id, String teamId, String stationId, String deptName, String category, int total) {
+        capacityRepository.findById(id).ifPresentOrElse(
+                cap -> {
+                    cap.setDepartmentName(deptName);
+                    cap.setTeamId(teamId);
+                    cap.setStationId(stationId);
+                    cap.setCategory(category);
+                    cap.setTotalPersonnel(total);
+                    cap.setAvailablePersonnel(total);
+                    cap.setDeployedPersonnel(0);
+                    cap.setReturningPersonnel(0);
+                    cap.setOffDutyPersonnel(0);
+                    capacityRepository.save(cap);
+                },
+                () -> {
+                    DepartmentCapacity cap = new DepartmentCapacity();
+                    cap.setId(id);
+                    cap.setTeamId(teamId);
+                    cap.setStationId(stationId);
+                    cap.setDepartmentName(deptName);
+                    cap.setCategory(category);
+                    cap.setTotalPersonnel(total);
+                    cap.setAvailablePersonnel(total);
+                    cap.setDeployedPersonnel(0);
+                    cap.setReturningPersonnel(0);
+                    cap.setOffDutyPersonnel(0);
+                    capacityRepository.save(cap);
+                }
         );
-        teamRepository.save(teamBeta);
+    }
 
-        Team teamCharlie = new Team(
-                "TEAM-CHN-N-003",
-                "Heavy Evacuation Charlie",
-                "STA-CHN-N-001",
-                null,
-                TeamStatus.BUSY,
-                "SWIFT_WATER_RESCUE,TRANSPORT",
-                "HIGH_CLEARANCE_TRUCK,MEGAPHONE",
-                13.0900,
-                80.2600
+    private void seedTeamsAndUsers() {
+        // North Teams
+        saveOrUpdateTeam("TEAM-CHN-N-001", "Flood Rescue Team - North Station", "STA-CHN-N-001", "FLOOD,SWIFT_WATER_RESCUE,BOAT_OPERATION,WATER_EXTRACTION", "INFLATABLE_ZODIAC_BOAT,LIFE_JACKETS,ROPES", 13.0827, 80.2707);
+        saveOrUpdateTeam("TEAM-CHN-N-002", "Fire Response Team - North Station", "STA-CHN-N-001", "FIRE,FIRE_SUPPRESSION,EXTRICATION,SMOKE_VENTILATION", "FIRE_ENGINE,THERMAL_IMAGER,BREATHING_APPARATUS", 13.0827, 80.2707);
+        saveOrUpdateTeam("TEAM-CHN-N-003", "Emergency Medical Team - North Station", "STA-CHN-N-001", "MEDICAL,TRIAGE,TRAUMA_CARE,EMT,PARAMEDIC", "AMBULANCE,OXYGEN_KIT,DEFIBRILLATOR,TRAUMA_KIT", 13.0827, 80.2707);
+        saveOrUpdateTeam("TEAM-CHN-N-004", "Search & Rescue Team - North Station", "STA-CHN-N-001", "TRAPPED,MISSING,STRUCTURAL_SEARCH,URBAN_SAR,DEBRIS_CLEARING", "HYDRAULIC_CUTTERS,SEARCH_CAM,HEAVY_ROPES,K9_UNIT", 13.0827, 80.2707);
+
+        // South Teams
+        saveOrUpdateTeam("TEAM-CHN-S-001", "Flood Rescue Team - South Station", "STA-CHN-S-002", "FLOOD,SWIFT_WATER_RESCUE,BOAT_OPERATION", "MOTORIZED_DINGHY,LIFE_JACKETS", 13.0360, 80.2675);
+        saveOrUpdateTeam("TEAM-CHN-S-002", "Emergency Medical Team - South Station", "STA-CHN-S-002", "MEDICAL,TRIAGE,TRAUMA_CARE,FIRST_AID", "AMBULANCE,FIRST_AID_KIT,DEFIBRILLATOR", 13.0360, 80.2675);
+        saveOrUpdateTeam("TEAM-CHN-S-003", "Fire Response Team - South Station", "STA-CHN-S-002", "FIRE,FIRE_SUPPRESSION,EXTRICATION,SMOKE_VENTILATION", "FIRE_ENGINE,THERMAL_IMAGER,BREATHING_APPARATUS", 13.0360, 80.2675);
+        saveOrUpdateTeam("TEAM-CHN-S-004", "Search & Rescue Team - South Station", "STA-CHN-S-002", "TRAPPED,MISSING,STRUCTURAL_SEARCH,URBAN_SAR,DEBRIS_CLEARING", "HYDRAULIC_CUTTERS,SEARCH_CAM,HEAVY_ROPES,K9_UNIT", 13.0360, 80.2675);
+
+        // East Teams
+        saveOrUpdateTeam("TEAM-CHN-E-001", "Flood Rescue Team - East Station", "STA-CHN-E-003", "FLOOD,SWIFT_WATER_RESCUE,COASTAL_EXTRACTION", "HIGH_SPEED_RESCUE_BOAT,LIFE_JACKETS", 13.1143, 80.2974);
+        saveOrUpdateTeam("TEAM-CHN-E-002", "Fire Response Team - East Station", "STA-CHN-E-003", "FIRE,FIRE_SUPPRESSION,PORT_EXTRICATION", "FIRE_TENDER,FOAM_CANNON", 13.1143, 80.2974);
+        saveOrUpdateTeam("TEAM-CHN-E-003", "Emergency Medical Team - East Station", "STA-CHN-E-003", "MEDICAL,TRIAGE,TRAUMA_CARE,PARAMEDIC", "AMBULANCE,OXYGEN_KIT,TRIAGE_KIT", 13.1143, 80.2974);
+        saveOrUpdateTeam("TEAM-CHN-E-004", "Search & Rescue Team - East Station", "STA-CHN-E-003", "TRAPPED,MISSING,PORT_SAR,COLLAPSED_CONTAINER_SEARCH", "HYDRAULIC_SPREADERS,SEARCH_CAM", 13.1143, 80.2974);
+
+        // West Teams
+        saveOrUpdateTeam("TEAM-CHN-W-001", "Flood Rescue Team - West Station", "STA-CHN-W-004", "FLOOD,SWIFT_WATER_RESCUE,CANAL_EXTRACTION", "PONTOON_BOAT,LIFE_LINES", 13.1147, 80.1548);
+        saveOrUpdateTeam("TEAM-CHN-W-002", "Fire Response Team - West Station", "STA-CHN-W-004", "FIRE,INDUSTRIAL_FIRE,CHEMICAL_EXTRICATION", "FIRE_TRUCK,FOAM_SUPPRESSION", 13.1147, 80.1548);
+        saveOrUpdateTeam("TEAM-CHN-W-003", "Emergency Medical Team - West Station", "STA-CHN-W-004", "MEDICAL,TRIAGE,TRAUMA_CARE,INDUSTRIAL_FIRST_AID", "AMBULANCE,CRITICAL_CARE_KIT", 13.1147, 80.1548);
+        saveOrUpdateTeam("TEAM-CHN-W-004", "Search & Rescue Team - West Station", "STA-CHN-W-004", "TRAPPED,MISSING,INDUSTRIAL_SAR,CONFINED_SPACE_SEARCH", "RESCUE_WINCH,CUTTING_TORCH,SEARCH_CAM", 13.1147, 80.1548);
+
+        // North Users
+        saveOrUpdateUser("USR-RSC-N-01", "flood.north@amenedge.test", "Flood@12345", "North Flood Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-N-001", "TEAM-CHN-N-001", "FLOOD,SWIFT_WATER_RESCUE");
+        saveOrUpdateUser("USR-RSC-N-02", "fire.north@amenedge.test", "Fire@12345", "North Fire Response Officer", Role.RESCUE_MEMBER, "STA-CHN-N-001", "TEAM-CHN-N-002", "FIRE,EXTRICATION");
+        saveOrUpdateUser("USR-RSC-N-03", "medical.north@amenedge.test", "Medical@12345", "North Medical Paramedic", Role.RESCUE_MEMBER, "STA-CHN-N-001", "TEAM-CHN-N-003", "MEDICAL,TRIAGE");
+        saveOrUpdateUser("USR-RSC-N-04", "sar.north@amenedge.test", "Sar@12345", "North Search & Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-N-001", "TEAM-CHN-N-004", "TRAPPED,MISSING,URBAN_SAR");
+        saveOrUpdateUser("USR-LDR-N-01", "leader.north@amenedge.test", "Leader@12345", "Commander North (Anna Nagar)", Role.STATION_LEADER, "STA-CHN-N-001", null, "TACTICAL_COMMAND");
+
+        // South Users
+        saveOrUpdateUser("USR-RSC-S-01", "flood.south@amenedge.test", "Flood@12345", "South Flood Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-S-002", "TEAM-CHN-S-001", "FLOOD,SWIFT_WATER_RESCUE");
+        saveOrUpdateUser("USR-RSC-S-02", "medical.south@amenedge.test", "Medical@12345", "South Medical Paramedic", Role.RESCUE_MEMBER, "STA-CHN-S-002", "TEAM-CHN-S-002", "MEDICAL,TRIAGE");
+        saveOrUpdateUser("USR-RSC-S-03", "fire.south@amenedge.test", "Fire@12345", "South Fire Response Officer", Role.RESCUE_MEMBER, "STA-CHN-S-002", "TEAM-CHN-S-003", "FIRE,EXTRICATION");
+        saveOrUpdateUser("USR-RSC-S-04", "sar.south@amenedge.test", "Sar@12345", "South Search & Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-S-002", "TEAM-CHN-S-004", "TRAPPED,MISSING,URBAN_SAR");
+        saveOrUpdateUser("USR-LDR-S-01", "leader.south@amenedge.test", "Leader@12345", "Commander South (Tambaram)", Role.STATION_LEADER, "STA-CHN-S-002", null, "TACTICAL_COMMAND");
+
+        // East Users
+        saveOrUpdateUser("USR-RSC-E-01", "flood.east@amenedge.test", "Flood@12345", "East Flood Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-E-003", "TEAM-CHN-E-001", "FLOOD,COASTAL_EXTRACTION");
+        saveOrUpdateUser("USR-RSC-E-02", "fire.east@amenedge.test", "Fire@12345", "East Fire Response Officer", Role.RESCUE_MEMBER, "STA-CHN-E-003", "TEAM-CHN-E-002", "FIRE,PORT_EXTRICATION");
+        saveOrUpdateUser("USR-RSC-E-03", "medical.east@amenedge.test", "Medical@12345", "East Medical Paramedic", Role.RESCUE_MEMBER, "STA-CHN-E-003", "TEAM-CHN-E-003", "MEDICAL,TRIAGE");
+        saveOrUpdateUser("USR-RSC-E-04", "sar.east@amenedge.test", "Sar@12345", "East Search & Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-E-003", "TEAM-CHN-E-004", "TRAPPED,MISSING,PORT_SAR");
+        saveOrUpdateUser("USR-LDR-E-01", "leader.east@amenedge.test", "Leader@12345", "Commander East (Royapuram)", Role.STATION_LEADER, "STA-CHN-E-003", null, "TACTICAL_COMMAND");
+
+        // West Users
+        saveOrUpdateUser("USR-RSC-W-01", "flood.west@amenedge.test", "Flood@12345", "West Flood Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-W-004", "TEAM-CHN-W-001", "FLOOD,CANAL_EXTRACTION");
+        saveOrUpdateUser("USR-RSC-W-02", "fire.west@amenedge.test", "Fire@12345", "West Fire Response Officer", Role.RESCUE_MEMBER, "STA-CHN-W-004", "TEAM-CHN-W-002", "FIRE,CHEMICAL_EXTRICATION");
+        saveOrUpdateUser("USR-RSC-W-03", "medical.west@amenedge.test", "Medical@12345", "West Medical Paramedic", Role.RESCUE_MEMBER, "STA-CHN-W-004", "TEAM-CHN-W-003", "MEDICAL,TRIAGE");
+        saveOrUpdateUser("USR-RSC-W-04", "sar.west@amenedge.test", "Sar@12345", "West Search & Rescue Officer", Role.RESCUE_MEMBER, "STA-CHN-W-004", "TEAM-CHN-W-004", "TRAPPED,MISSING,INDUSTRIAL_SAR");
+        saveOrUpdateUser("USR-LDR-W-01", "leader.west@amenedge.test", "Leader@12345", "Commander West (Ambattur)", Role.STATION_LEADER, "STA-CHN-W-004", null, "TACTICAL_COMMAND");
+
+        // Governance & Public
+        saveOrUpdateUser("USR-SUP-01", "supervisor@amenedge.test", "Super@12345", "District Supervisor Priya Raman", Role.REGIONAL_SUPERVISOR, null, null, "INCIDENT_COMMAND,CROSS_STATION_COORDINATION");
+        saveOrUpdateUser("USR-ADM-01", "admin@amenedge.test", "Admin@12345", "System Admin Kumar", Role.ORG_ADMIN, null, null, "ADMIN_GOVERNANCE,AUDIT_AUDITOR");
+        saveOrUpdateUser("USR-CTZ-01", "citizen@amenedge.test", "Citizen@12345", "Verified Citizen Arun", Role.CITIZEN, null, null, null);
+    }
+
+    private void saveOrUpdateTeam(String id, String name, String stationId, String capabilities, String equipment, double lat, double lng) {
+        teamRepository.findById(id).ifPresentOrElse(
+                team -> {
+                    team.setName(name);
+                    team.setStationId(stationId);
+                    team.setCapabilities(capabilities);
+                    team.setEquipment(equipment);
+                    team.setStatus(TeamStatus.AVAILABLE);
+                    team.setActiveIncidentCount(0);
+                    teamRepository.save(team);
+                },
+                () -> {
+                    Team team = new Team(id, name, stationId, null, TeamStatus.AVAILABLE, capabilities, equipment, lat, lng);
+                    teamRepository.save(team);
+                }
         );
-        teamCharlie.setActiveIncidentCount(1);
-        teamRepository.save(teamCharlie);
+    }
 
-        Team teamDelta = new Team(
-                "TEAM-CHN-S-001",
-                "Mylapore Coastal Rescue Delta",
-                "STA-CHN-S-002",
-                null,
-                TeamStatus.AVAILABLE,
-                "SWIFT_WATER_RESCUE,DIVING,TRAUMA_CARE",
-                "MOTORIZED_DINGHY,DEFIBRILLATOR",
-                13.0370,
-                80.2680
+    private void saveOrUpdateUser(String id, String username, String rawPassword, String fullName, Role role, String stationId, String teamId, String skills) {
+        userRepository.findByUsername(username).ifPresentOrElse(
+                user -> {
+                    user.setPasswordHash(passwordEncoder.encode(rawPassword));
+                    user.setFullName(fullName);
+                    user.setRole(role);
+                    user.setStationId(stationId);
+                    user.setTeamId(teamId);
+                    user.setSkills(skills);
+                    userRepository.save(user);
+                },
+                () -> {
+                    User user = new User(id, username, passwordEncoder.encode(rawPassword), fullName, role, stationId);
+                    user.setTeamId(teamId);
+                    user.setSkills(skills);
+                    userRepository.save(user);
+                }
         );
-        teamRepository.save(teamDelta);
-
-        // 5. Bulletins
-        Bulletin b1 = new Bulletin(
-                "BLT-001",
-                "Station North Wi-Fi Operational - Emergency Mesh Active",
-                "Cellular towers offline across North Chennai. Station North Wi-Fi (SSID: AmeniEdge-Station-North-SOS) is active on backup power. Submit SOS or visit St. Mary Relief Camp.",
-                "INFO",
-                "STA-CHN-N-001",
-                "USR-LDR-001"
-        );
-        Bulletin b2 = new Bulletin(
-                "BLT-002",
-                "Urgent Flood Alert: River Otteri Overflowing",
-                "Otteri Nullah water levels exceeding danger mark by 1.8m. Evacuate low-lying ground floors immediately.",
-                "DANGER",
-                "STA-CHN-N-001",
-                "USR-LDR-001"
-        );
-        bulletinRepository.save(b1);
-        bulletinRepository.save(b2);
-
-        // 6. Incidents
-        Incident inc1 = new Incident();
-        inc1.setId("INC-1001");
-        inc1.setClientReferenceId("e9c8e1a1-3b74-4b57-bc01-9a70659a0001");
-        inc1.setStationId("STA-CHN-N-001");
-        inc1.setCategory(IncidentCategory.FLOOD);
-        inc1.setPriority(IncidentPriority.P1_CRITICAL);
-        inc1.setStatus(IncidentStatus.RECEIVED);
-        inc1.setAffectedPeople(4);
-        inc1.setLatitude(13.0895);
-        inc1.setLongitude(80.2715);
-        inc1.setLocationLandmark("Basin Bridge 2nd Cross, Near Water Tank");
-        inc1.setDetails("Water reached 1st floor balcony. 2 elderly and 2 children stranded without drinking water.");
-        inc1.setContactName("Karthik Raja");
-        inc1.setContactPhone("+91-98401-11111");
-        inc1.setHasImmediateDanger(true);
-        incidentRepository.save(inc1);
-
-        Incident inc2 = new Incident();
-        inc2.setId("INC-1002");
-        inc2.setClientReferenceId("e9c8e1a1-3b74-4b57-bc01-9a70659a0002");
-        inc2.setStationId("STA-CHN-N-001");
-        inc2.setCategory(IncidentCategory.MEDICAL);
-        inc2.setPriority(IncidentPriority.P1_CRITICAL);
-        inc2.setStatus(IncidentStatus.ASSIGNED);
-        inc2.setAffectedPeople(1);
-        inc2.setLatitude(13.0840);
-        inc2.setLongitude(80.2650);
-        inc2.setLocationLandmark("Royapuram Police Station Road #12");
-        inc2.setDetails("72yo diabetic woman with breathing difficulty. Power failure stopped oxygen unit.");
-        inc2.setContactName("Revathi S");
-        inc2.setContactPhone("+91-98402-22222");
-        inc2.setHasImmediateDanger(true);
-        inc2.setAssignedTeamId("TEAM-CHN-N-003");
-        incidentRepository.save(inc2);
-
-        Incident inc3 = new Incident();
-        inc3.setId("INC-1003");
-        inc3.setClientReferenceId("e9c8e1a1-3b74-4b57-bc01-9a70659a0003");
-        inc3.setStationId("STA-CHN-N-001");
-        inc3.setCategory(IncidentCategory.OTHER);
-        inc3.setPriority(IncidentPriority.P3_ROUTINE);
-        inc3.setStatus(IncidentStatus.TRIAGED);
-        inc3.setAffectedPeople(0);
-        inc3.setLatitude(13.0780);
-        inc3.setLongitude(80.2740);
-        inc3.setLocationLandmark("Walltax Road Intersection");
-        inc3.setDetails("Massive banyan tree fallen across both lanes. Fire tender cannot pass.");
-        inc3.setContactName("Traffic Warden Ravi");
-        inc3.setContactPhone("+91-98403-33333");
-        inc3.setHasImmediateDanger(false);
-        incidentRepository.save(inc3);
     }
 }

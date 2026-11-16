@@ -37,6 +37,7 @@ public class JwtTokenProvider {
                 .claim("userId", principal.getId())
                 .claim("role", principal.getRole().name())
                 .claim("stationId", principal.getStationId())
+                .claim("teamId", principal.getTeamId())
                 .claim("fullName", principal.getFullName())
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -62,3 +63,4 @@ public class JwtTokenProvider {
         }
     }
 }
+

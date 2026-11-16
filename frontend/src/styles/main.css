@@ -8,15 +8,15 @@
 
 html, body {
   width: 100%;
-  min-height: 100dvh;
-  height: 100dvh;
+  min-height: 100%;
   overflow-x: hidden;
-  background-color: var(--color-surface);
+  background-color: var(--color-canvas);
   color: var(--color-text-primary);
-  font-family: var(--font-family-system);
+  font-family: var(--font-family-base);
   font-size: var(--font-size-base);
-  line-height: var(--line-height-normal);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -24,8 +24,9 @@ html, body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
+  background-color: var(--color-canvas);
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
@@ -34,17 +35,34 @@ html, body {
 
 /* Accessibility Focus Rings */
 :focus-visible {
-  outline: 3px solid var(--color-focus-ring);
+  outline: 3px solid var(--color-border-focus);
   outline-offset: 2px;
 }
 
-/* Interactive target baseline */
+/* Base input and button styles */
 button, input, select, textarea, a {
   font-family: inherit;
   font-size: inherit;
+  color: inherit;
 }
 
-/* Screen Reader Only Utility */
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-canvas-subtle);
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Screen reader utility */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -57,55 +75,14 @@ button, input, select, textarea, a {
   border: 0;
 }
 
-/* Respect Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+/* Responsive visibility utilities */
+@media (max-width: 768px) {
+  .mobile-hide {
+    display: none !important;
   }
 }
-
-/* Leaflet map styles container */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  background: var(--color-surface-subtle);
-  font-family: inherit;
-}
-
-.leaflet-control-attribution {
-  font-size: 10px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  color: #333 !important;
-  padding: 2px 6px !important;
-}
-
-/* Custom Leaflet Pulsing Markers */
-.marker-pin {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  font-weight: bold;
-  color: #ffffff;
-  box-shadow: var(--shadow-md);
-  border: 2px solid #ffffff;
-}
-
-.marker-pin.danger {
-  background-color: var(--color-danger);
-}
-
-.marker-pin.success {
-  background-color: var(--color-success);
-}
-
-.marker-pin.info {
-  background-color: var(--color-info);
-}
-
-.marker-pin.warning {
-  background-color: var(--color-warning);
+@media (min-width: 769px) {
+  .desktop-hide {
+    display: none !important;
+  }
 }

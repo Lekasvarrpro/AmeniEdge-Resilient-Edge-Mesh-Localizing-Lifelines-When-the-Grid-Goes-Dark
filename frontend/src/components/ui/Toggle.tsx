@@ -80,3 +80,4 @@ export const Toggle: React.FC<ToggleProps> = ({
     </label>
   );
 };
+

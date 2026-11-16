@@ -32,3 +32,4 @@ public class SyncController {
         return ResponseEntity.ok(ApiResponse.ok(events));
     }
 }
+

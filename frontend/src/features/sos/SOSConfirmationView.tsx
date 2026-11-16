@@ -3,6 +3,8 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ProgressTracker } from '../../components/ui/ProgressTracker';
 import type { LocalReport } from '../../lib/db/index';
+import { MdEmergency } from 'react-icons/md';
+import { FiAlertTriangle, FiPhone } from 'react-icons/fi';
 
 export interface SOSConfirmationViewProps {
   report: LocalReport;
@@ -45,7 +47,7 @@ export const SOSConfirmationView: React.FC<SOSConfirmationViewProps> = ({
             boxShadow: 'var(--shadow-md)',
           }}
         >
-          🚨
+          <MdEmergency aria-hidden="true" />
         </div>
         <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 800, marginTop: '12px' }}>
           Emergency SOS Logged
@@ -65,10 +67,30 @@ export const SOSConfirmationView: React.FC<SOSConfirmationViewProps> = ({
         assignedTeamName={report.assigned_team_name}
       />
 
+      {/* Receiving Department & Station Routing Notice */}
+      {(report.routing_notice || report.assigned_team_name) && (
+        <Card variant="default" style={{ borderLeft: '4px solid var(--color-primary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-primary)' }}>
+              DISPATCH DESTINATION
+            </span>
+            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700 }}>
+              {report.routing_notice || `Received by ${report.assigned_team_name}`}
+            </span>
+            {report.station_name && (
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                Coordinating Station: {report.station_name}
+              </span>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Critical Safety Tips */}
       <Card variant="subtle">
-        <h3 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, marginBottom: '8px' }}>
-          ⚠️ Immediate Safety Protocol:
+        <h3 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <FiAlertTriangle style={{ color: 'var(--color-warning)' }} aria-hidden="true" />
+          <span>Immediate Safety Protocol:</span>
         </h3>
         <ul style={{ paddingLeft: '20px', fontSize: 'var(--font-size-xs)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <li>Stay on highest accessible floor or roof if water is rising.</li>
@@ -98,7 +120,7 @@ export const SOSConfirmationView: React.FC<SOSConfirmationViewProps> = ({
             fontSize: 'var(--font-size-sm)',
           }}
         >
-          📞 Call 112 (Official Emergency Services)
+          <FiPhone aria-hidden="true" /> Call 112 (Official Emergency Services)
         </a>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -113,3 +135,4 @@ export const SOSConfirmationView: React.FC<SOSConfirmationViewProps> = ({
     </div>
   );
 };
+

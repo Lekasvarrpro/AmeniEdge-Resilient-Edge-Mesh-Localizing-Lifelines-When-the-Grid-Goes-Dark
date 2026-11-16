@@ -9,3 +9,4 @@ import java.util.List;
 public interface IncidentEventRepository extends JpaRepository<IncidentEvent, String> {
     List<IncidentEvent> findByIncidentIdOrderByTimestampAsc(String incidentId);
 }
+

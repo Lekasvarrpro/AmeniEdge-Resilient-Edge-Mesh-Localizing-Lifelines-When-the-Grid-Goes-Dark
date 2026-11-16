@@ -174,3 +174,4 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ onTrigger, disabled = fals
     </div>
   );
 };
+

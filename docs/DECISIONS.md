@@ -78,3 +78,38 @@
   - Touch target minimum: 48x48px (SOS button minimum 160px / 40% viewport width).
   - Every status pairs color with an SVG icon and explicit text label.
 - **Consequences**: Sub-1.5s cold cache boot, instant legibility in harsh environments, and no layout shift.
+
+---
+
+## ADR-007: Dark Bento Grid Command Dashboards and Modular Components
+- **Date**: 2026-10-24
+- **Status**: ACCEPTED
+- **Context**: Incident commanders, station leaders, regional supervisors, and system administrators require high-density, low-glare tactical situational awareness interfaces during night operations and multi-monitor operations without altering the clean citizen public portals.
+- **Decision**: Implement a Dark Bento grid UI layout using CSS variables (`--color-dash-bg: #090B10`, `--color-dash-card: #121620`, `--color-dash-surface: #19202E`, `--color-dash-border: #1F2737`, `--color-dash-accent-blue: #2563EB`) with reusable components:
+  - `Sidebar.tsx`: Brand icon, collapsible drawer for mobile, sector indicators, user role pill, and bottom mesh connection status.
+  - `Topbar.tsx`: Sector selection, quick search, layer filter button, and primary gradient dispatch action.
+  - `StatCard.tsx`: Metric KPI values with trend indicator pills, sub-status chips, and responsive SVG glowing waveform sparklines.
+  - `ChartCard.tsx`: Operational capacity circular SVG gauge meter and category breakdown bar charts.
+  - `ActivityList.tsx`: RescueFit AI Insights feed with glowing gradients, carousel indicators, and quick action buttons.
+  - `DataTableCard.tsx`: Dark-styled dense tabular views with status badges, priority markers, and category iconography.
+  - Fully responsive from 320px up with zero horizontal overflow, drawer navigation on mobile, and >= 48px touch targets.
+- **Consequences**: Standardized command center ergonomics across station, regional, and administrative roles while leaving citizen portals cleanly untouched.
+
+---
+
+## ADR-008: Rescue Team Assignment Lifecycle, Membership Authorization, and Mandatory Reason Decline Protocol
+- **Date**: 2026-10-24
+- **Status**: ACCEPTED
+- **Context**: In emergency response, rescue team dispatches cannot silently fail or leave units unaccounted for. Accepting an assignment must synchronously update the incident progression (`ASSIGNED` -> `ACCEPTED` -> `EN_ROUTE` -> `ON_SITE` -> `ASSISTING` -> `RESOLVED`), and declining must be auditable, require operational justification, and immediately release the incident back to the triage queue.
+- **Decision**:
+  - **Endpoints**: `POST /api/v1/assignments/{id}/accept` and `POST /api/v1/assignments/{id}/decline`.
+  - **Authorization**: Validates that the calling user is a member of the assigned team or possesses `ROLE_STATION_LEADER` / `ROLE_ADMIN` (throws 403 `AccessDeniedException` if unauthorized).
+  - **Validation**: Declines require an explicit reason from predefined chips (`Too far`, `No equipment`, `Already busy`, `Unsafe`, `Other` + optional detailed text). Requests missing reasons return 400 Bad Request.
+  - **Idempotency**: Repeated accept calls return the existing active assignment safely with 200 OK without re-triggering side effects.
+  - **State Machine Synchronization**:
+    - On Accept: Assignment status becomes `ACCEPTED`; team status transitions to `BUSY`. Incident status synchronizes to `ACCEPTED`.
+    - On Decline: Assignment status becomes `DECLINED` with `reason` and timestamp stored; incident status reverts to `TRIAGED` (unassigned) and appears back in station leader triage queue with the decline reason logged.
+  - **Offline-First Fallback**: Frontend queues transitions in Dexie/IndexedDB outbox if edge station link is temporarily interrupted, ensuring operational continuity.
+- **Consequences**: Elimination of silent dropouts, full legal chain-of-custody for triage failures, and seamless coordinator-to-field synchronization.
+
+

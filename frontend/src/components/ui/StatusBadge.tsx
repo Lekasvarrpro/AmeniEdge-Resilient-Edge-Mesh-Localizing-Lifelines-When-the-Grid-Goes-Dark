@@ -1,4 +1,5 @@
 import React from 'react';
+import { FiCheck, FiSettings } from 'react-icons/fi';
 
 export interface StatusBadgeProps {
   status: string;
@@ -8,7 +9,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   let bg = 'var(--color-surface-subtle)';
   let color = 'var(--color-text-secondary)';
   let border = 'var(--color-border)';
-  let icon = '●';
+  let icon: React.ReactNode = '●';
   let label = status;
 
   switch (status.toUpperCase()) {
@@ -23,7 +24,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       bg = 'var(--color-warning-bg)';
       color = 'var(--color-warning)';
       border = 'var(--color-warning-border)';
-      icon = '⚙';
+      icon = <FiSettings aria-hidden="true" />;
       label = 'Triaged';
       break;
     case 'ASSIGNED':
@@ -37,7 +38,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       bg = 'var(--color-success-bg)';
       color = 'var(--color-success)';
       border = 'var(--color-success-border)';
-      icon = '✓';
+      icon = <FiCheck aria-hidden="true" />;
       label = 'Accepted';
       break;
     case 'EN_ROUTE':
@@ -59,7 +60,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       bg = 'var(--color-success-bg)';
       color = 'var(--color-success)';
       border = 'var(--color-success-border)';
-      icon = '✓';
+      icon = <FiCheck aria-hidden="true" />;
       label = status === 'RESOLVED' ? 'Resolved' : 'Closed';
       break;
     case 'AVAILABLE':
@@ -179,3 +180,4 @@ export const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => {
     </span>
   );
 };
+

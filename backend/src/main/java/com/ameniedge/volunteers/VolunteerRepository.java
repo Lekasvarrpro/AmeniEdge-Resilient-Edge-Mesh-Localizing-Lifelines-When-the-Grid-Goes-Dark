@@ -11,3 +11,4 @@ public interface VolunteerRepository extends JpaRepository<VolunteerShift, Strin
     List<VolunteerShift> findByStationIdAndStatus(String stationId, String status);
     Optional<VolunteerShift> findTopByUserIdAndStatus(String userId, String status);
 }
+

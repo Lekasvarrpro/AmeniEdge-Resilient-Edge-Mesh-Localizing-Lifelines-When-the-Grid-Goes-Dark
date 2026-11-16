@@ -70,6 +70,7 @@ class OutboxSynchronizer {
     contactPhone?: string;
     hasImmediateDanger?: boolean;
     stationId?: string;
+    region?: string;
   }): Promise<LocalReport> {
     const clientRefId = crypto.randomUUID();
 
@@ -99,6 +100,7 @@ class OutboxSynchronizer {
       latitude: payload.latitude,
       longitude: payload.longitude,
       location_landmark: payload.locationLandmark,
+      region: payload.region,
       details: payload.details,
       contact_name: payload.contactName,
       contact_phone: payload.contactPhone,
@@ -159,6 +161,10 @@ class OutboxSynchronizer {
             report.id = serverId;
             report.stage = 'RECEIVED_STATION';
             report.server_status = (serverResponse.status as string) || 'RECEIVED';
+            report.region = (serverResponse.region as string) || report.region;
+            report.routing_notice = (serverResponse.routingNotice as string) || (serverResponse.routing_notice as string);
+            report.assigned_team_name = (serverResponse.assignedTeamName as string);
+            report.station_name = (serverResponse.stationName as string);
             report.synced_at = Date.now();
             await db.reports.put(report);
           }
@@ -239,3 +245,4 @@ class OutboxSynchronizer {
 }
 
 export const outboxSync = new OutboxSynchronizer();
+

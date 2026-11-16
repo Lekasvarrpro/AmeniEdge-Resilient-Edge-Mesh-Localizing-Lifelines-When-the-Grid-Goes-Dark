@@ -98,3 +98,4 @@ public class OrganizationController {
         public void setLongitude(Double longitude) { this.longitude = longitude; }
     }
 }
+

@@ -120,3 +120,4 @@ class RescueFitEngineTest {
         assertThat(exclusionC.getExclusionReason()).contains("deployed on active mission");
     }
 }
+

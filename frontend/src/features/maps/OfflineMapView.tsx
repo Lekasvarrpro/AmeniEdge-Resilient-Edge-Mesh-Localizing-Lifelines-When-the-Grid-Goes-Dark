@@ -4,6 +4,9 @@ import 'leaflet/dist/leaflet.css';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { StatusBadge, PriorityBadge } from '../../components/ui/StatusBadge';
 import { api } from '../../lib/api/client';
+import { FiNavigation, FiLayers, FiAlertTriangle, FiWifi } from 'react-icons/fi';
+import { MdEmergency } from 'react-icons/md';
+import { FaAmbulance, FaHome } from 'react-icons/fa';
 
 export interface MapMarkerItem {
   id: string;
@@ -45,12 +48,27 @@ export const OfflineMapView: React.FC = () => {
       zoomControl: false,
     });
 
-    // Add locally cached tile layer from Station API
-    L.tileLayer('/api/v1/maps/tiles/{z}/{x}/{y}', {
+    // Add locally cached tile layer from Station API with 3-tier fallback
+    const localTile = L.tileLayer('/api/v1/maps/tiles/{z}/{x}/{y}', {
       minZoom: 11,
       maxZoom: 16,
       attribution: '&copy; OpenStreetMap contributors | AmeniEdge Offline Tile Cache',
     }).addTo(map);
+
+    localTile.on('tileerror', () => {
+      map.removeLayer(localTile);
+      const osmTile = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+
+      osmTile.on('tileerror', () => {
+        map.removeLayer(osmTile);
+        if (mapContainerRef.current) {
+          mapContainerRef.current.style.backgroundColor = '#E2E8F0';
+        }
+      });
+    });
 
     // Zoom controls in top right (leaving bottom thumb zone free)
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -178,23 +196,23 @@ export const OfflineMapView: React.FC = () => {
       if (item.type === 'STATION' && !layers.stations) return;
 
       let pinColor = 'var(--color-info)';
-      let pinIcon = '📍';
+      let pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
       if (item.type === 'INCIDENT') {
         pinColor = item.priority === 'P1_CRITICAL' ? 'var(--color-danger)' : 'var(--color-warning)';
-        pinIcon = '🚨';
+        pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
       } else if (item.type === 'SHELTER') {
         pinColor = 'var(--color-success)';
-        pinIcon = '🏕️';
+        pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
       } else if (item.type === 'HAZARD') {
         pinColor = 'var(--color-danger)';
-        pinIcon = '⚠️';
+        pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 22 20 2 20 12 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
       } else if (item.type === 'TEAM') {
         pinColor = 'var(--color-info)';
-        pinIcon = '🚑';
+        pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
       } else if (item.type === 'STATION') {
         pinColor = '#101828';
-        pinIcon = '📡';
+        pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
       }
 
       const customIcon = L.divIcon({
@@ -213,7 +231,7 @@ export const OfflineMapView: React.FC = () => {
             border: 2px solid #ffffff;
             cursor: pointer;
           ">
-            ${pinIcon}
+            ${pinSvg}
           </div>
         `,
         iconSize: [36, 36],
@@ -235,7 +253,10 @@ export const OfflineMapView: React.FC = () => {
         (pos) => {
           mapInstanceRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 15);
         },
-        () => alert('GPS location unavailable in disconnected zone')
+        () => {
+          console.warn('GPS location unavailable in disconnected zone. Reverting to station coordinates.');
+          mapInstanceRef.current?.setView([13.0827, 80.2707], 14);
+        }
       );
     }
   };
@@ -275,7 +296,7 @@ export const OfflineMapView: React.FC = () => {
             justifyContent: 'center',
           }}
         >
-          🎯
+          <FiNavigation />
         </button>
 
         <button
@@ -296,7 +317,7 @@ export const OfflineMapView: React.FC = () => {
             justifyContent: 'center',
           }}
         >
-          🥞
+          <FiLayers />
         </button>
       </div>
 
@@ -335,11 +356,11 @@ export const OfflineMapView: React.FC = () => {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {[
-            { key: 'incidents', label: '🚨 Emergency Incidents' },
-            { key: 'shelters', label: '🏕️ Relief Shelters & Camps' },
-            { key: 'hazards', label: '⚠️ Active Inundation & Hazards' },
-            { key: 'teams', label: '🚑 Deployed Rescue Teams' },
-            { key: 'stations', label: '📡 Wi-Fi Mesh Stations' },
+            { key: 'incidents', label: 'Emergency Incidents', icon: <MdEmergency style={{ color: '#EF4444' }} /> },
+            { key: 'shelters', label: 'Relief Shelters & Camps', icon: <FaHome style={{ color: '#10B981' }} /> },
+            { key: 'hazards', label: 'Active Inundation & Hazards', icon: <FiAlertTriangle style={{ color: '#F59E0B' }} /> },
+            { key: 'teams', label: 'Deployed Rescue Teams', icon: <FaAmbulance style={{ color: '#3B82F6' }} /> },
+            { key: 'stations', label: 'Wi-Fi Mesh Stations', icon: <FiWifi style={{ color: '#6366F1' }} /> },
           ].map((lyr) => (
             <label
               key={lyr.key}
@@ -351,7 +372,10 @@ export const OfflineMapView: React.FC = () => {
                 cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 600 }}>{lyr.label}</span>
+              <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {lyr.icon}
+                <span>{lyr.label}</span>
+              </span>
               <input
                 type="checkbox"
                 checked={layers[lyr.key as keyof typeof layers]}
@@ -367,3 +391,4 @@ export const OfflineMapView: React.FC = () => {
     </div>
   );
 };
+

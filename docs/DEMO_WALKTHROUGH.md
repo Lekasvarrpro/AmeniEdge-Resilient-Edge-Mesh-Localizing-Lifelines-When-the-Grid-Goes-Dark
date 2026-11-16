@@ -86,3 +86,4 @@
    - Red banner alerts: **"Dual-Station Assignment Conflict Detected!"**.
    - Supervisor reviews both station timestamps and clicks **"Designate Team Alpha (North)"** to arbitrate.
    - Conflict is resolved and permanently logged in the **Admin Audit Vault**.
+

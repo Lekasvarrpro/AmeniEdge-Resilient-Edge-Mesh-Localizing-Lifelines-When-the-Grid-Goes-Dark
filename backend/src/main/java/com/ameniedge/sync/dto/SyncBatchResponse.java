@@ -52,3 +52,4 @@ public class SyncBatchResponse {
         public void setResolution(String resolution) { this.resolution = resolution; }
     }
 }
+

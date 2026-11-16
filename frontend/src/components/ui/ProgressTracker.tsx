@@ -1,13 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  FiCheck,
+  FiClock,
+  FiTruck,
+  FiMapPin,
+  FiActivity,
+  FiCheckCircle,
+  FiAlertTriangle,
+  FiRefreshCw,
+} from 'react-icons/fi';
+import { api } from '../../lib/api/client';
 import type { ReportStage } from '../../lib/db/index';
 
+export interface TrackerPayload {
+  incidentId?: string;
+  clientReferenceId?: string;
+  category?: string;
+  affectedPeople?: number;
+  deliveryState?: 'SAVED_ON_DEVICE' | 'RECEIVED_BY_STATION';
+  assignmentState?: 'NONE' | 'OFFERED' | 'ACCEPTED' | 'DECLINED';
+  missionState?: 'WAITING' | 'EN_ROUTE' | 'ON_SITE' | 'WORKING' | 'RESOLVED';
+  syncState?: 'PENDING_SYNC' | 'SYNCED';
+  savedAt?: string | number | null;
+  receivedAt?: string | number | null;
+  offeredAt?: string | number | null;
+  acceptedAt?: string | number | null;
+  dispatchedAt?: string | number | null;
+  arrivedAt?: string | number | null;
+  resolvedAt?: string | number | null;
+  stationId?: string | null;
+  stationName?: string | null;
+  departmentName?: string | null;
+  teamId?: string | null;
+  teamName?: string | null;
+  declineReason?: string | null;
+  reassigning?: boolean;
+  distanceKm?: number | null;
+  etaSeconds?: number | null;
+  truckProgress?: number | null;
+  truckLatitude?: number | null;
+  truckLongitude?: number | null;
+  workTimeRemainingSeconds?: number | null;
+}
+
 export interface ProgressTrackerProps {
-  currentStage: ReportStage;
+  currentStage?: ReportStage;
   reportId?: string;
   createdAt?: number;
   syncedAt?: number;
   serverStatus?: string;
   assignedTeamName?: string;
+  initialTracker?: TrackerPayload;
 }
 
 export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
@@ -17,36 +60,220 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   syncedAt,
   serverStatus,
   assignedTeamName,
+  initialTracker,
 }) => {
-  const stages: { key: ReportStage; title: string; subtitle: string; index: number }[] = [
-    {
-      key: 'SAVED_LOCAL',
-      title: '1. Saved on Device',
-      subtitle: createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Persisted locally in outbox',
-      index: 1,
-    },
-    {
-      key: 'RECEIVED_STATION',
-      title: '2. Received by Station',
-      subtitle: syncedAt ? `Delivered at ${new Date(syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : (currentStage === 'SAVED_LOCAL' ? 'Queued · Waiting for station link' : 'Station intake verified'),
-      index: 2,
-    },
-    {
-      key: 'ACKNOWLEDGED_RESPONDER',
-      title: '3. Acknowledged by Responder',
-      subtitle: assignedTeamName ? `${assignedTeamName} (${serverStatus || 'Assigned'})` : (currentStage === 'SAVED_LOCAL' || currentStage === 'RECEIVED_STATION' ? 'Pending station leader dispatch' : 'Team dispatched'),
-      index: 3,
-    },
-  ];
+  const [tracker, setTracker] = useState<TrackerPayload | null>(initialTracker || null);
+  const [waitingElapsedSeconds, setWaitingElapsedSeconds] = useState<number>(0);
 
-  const getStageIndex = (stage: ReportStage) => {
-    if (stage === 'SAVED_LOCAL') return 1;
-    if (stage === 'RECEIVED_STATION') return 2;
-    if (stage === 'ACKNOWLEDGED_RESPONDER') return 3;
-    return 1;
+  // Poll live tracker status from backend if reportId is present
+  useEffect(() => {
+    if (!reportId) return;
+
+    let isMounted = true;
+    const fetchTracker = async () => {
+      try {
+        const res = await api.get<TrackerPayload>(`/incidents/${reportId}/tracker`);
+        if (isMounted && res) {
+          setTracker(res);
+        }
+      } catch {
+        // Fall back gracefully to local state if offline
+      }
+    };
+
+    fetchTracker();
+    const interval = setInterval(fetchTracker, 3000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [reportId]);
+
+  // Live timer for "Waiting for a rescue team"
+  useEffect(() => {
+    const offeredTime = tracker?.offeredAt || tracker?.receivedAt || syncedAt;
+    if (!offeredTime || tracker?.assignmentState === 'ACCEPTED' || tracker?.acceptedAt) {
+      return;
+    }
+
+    const startMs = typeof offeredTime === 'string' ? new Date(offeredTime).getTime() : offeredTime;
+    const timer = setInterval(() => {
+      const diff = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      setWaitingElapsedSeconds(diff);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [tracker?.offeredAt, tracker?.receivedAt, tracker?.assignmentState, tracker?.acceptedAt, syncedAt]);
+
+  const formatTime = (ts: string | number | null | undefined): string | null => {
+    if (!ts) return null;
+    try {
+      const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+      return null;
+    }
   };
 
-  const currentIdx = getStageIndex(currentStage);
+  const formatDuration = (totalSec: number): string => {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    if (mins === 0) return `${secs}s`;
+    return `${mins}m ${secs}s`;
+  };
+
+  // Derive granular state
+  const isReceived = Boolean(
+    tracker?.receivedAt ||
+    syncedAt ||
+    tracker?.deliveryState === 'RECEIVED_BY_STATION' ||
+    currentStage === 'RECEIVED_STATION' ||
+    currentStage === 'ACKNOWLEDGED_RESPONDER'
+  );
+
+  const isAccepted = Boolean(
+    tracker?.acceptedAt &&
+    tracker?.assignmentState === 'ACCEPTED'
+  );
+
+  const isEnRoute = Boolean(
+    isAccepted &&
+    (tracker?.missionState === 'EN_ROUTE' || tracker?.missionState === 'ON_SITE' || tracker?.missionState === 'WORKING' || tracker?.missionState === 'RESOLVED')
+  );
+
+  const isOnSite = Boolean(
+    tracker?.arrivedAt &&
+    (tracker?.missionState === 'ON_SITE' || tracker?.missionState === 'WORKING' || tracker?.missionState === 'RESOLVED')
+  );
+
+  const isResolved = Boolean(
+    tracker?.resolvedAt &&
+    tracker?.missionState === 'RESOLVED'
+  );
+
+  const isDeclined = tracker?.assignmentState === 'DECLINED' || Boolean(tracker?.reassigning);
+
+  const savedTimeStr = formatTime(tracker?.savedAt || createdAt) || 'Saved at submission';
+  const receivedTimeStr = formatTime(tracker?.receivedAt || syncedAt);
+  const acceptedTimeStr = formatTime(tracker?.acceptedAt);
+  const dispatchedTimeStr = formatTime(tracker?.dispatchedAt || tracker?.acceptedAt);
+  const arrivedTimeStr = formatTime(tracker?.arrivedAt);
+  const resolvedTimeStr = formatTime(tracker?.resolvedAt);
+
+  const stationDisplayName = tracker?.stationName || 'Regional Operations Base';
+  const departmentDisplayName = tracker?.departmentName || assignedTeamName || 'Specialist Rescue Unit';
+  const teamDisplayName = tracker?.teamName || tracker?.departmentName || assignedTeamName || 'Rescue Team';
+
+  // 7-step data definition
+  const steps = [
+    {
+      num: 1,
+      title: '1. Saved on this device',
+      isCompleted: true,
+      isActive: false,
+      timestamp: savedTimeStr,
+      subtitle: 'Stored locally in secure encrypted outbox',
+      icon: <FiCheck aria-hidden="true" />,
+    },
+    {
+      num: 2,
+      title: '2. Received by station',
+      isCompleted: isReceived,
+      isActive: !isReceived,
+      timestamp: isReceived ? receivedTimeStr : null,
+      subtitle: isReceived
+        ? `Delivered to ${stationDisplayName}`
+        : 'Waiting for station mesh link / Wi-Fi heartbeat',
+      icon: isReceived ? <FiCheck aria-hidden="true" /> : <FiClock aria-hidden="true" />,
+    },
+    {
+      num: 3,
+      title: '3. Waiting for a rescue team',
+      isCompleted: isAccepted,
+      isActive: isReceived && !isAccepted,
+      timestamp: isAccepted ? acceptedTimeStr : (isDeclined ? 'Reassigning' : `Waiting since ${formatDuration(waitingElapsedSeconds)}`),
+      subtitle: isDeclined ? (
+        <span style={{ color: 'var(--color-warning)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <FiAlertTriangle aria-hidden="true" />
+          <span>Declined: {tracker?.declineReason || 'Unit occupied'}. Reassigning to next team...</span>
+        </span>
+      ) : isAccepted ? (
+        `Offer accepted by ${teamDisplayName}`
+      ) : (
+        `Alert routed to ${departmentDisplayName} at ${stationDisplayName}`
+      ),
+      icon: isAccepted ? <FiCheck aria-hidden="true" /> : (isDeclined ? <FiRefreshCw aria-hidden="true" /> : <FiClock aria-hidden="true" />),
+    },
+    {
+      num: 4,
+      title: `4. Accepted by ${isAccepted ? teamDisplayName : departmentDisplayName}`,
+      isCompleted: isAccepted,
+      isActive: isAccepted && !isEnRoute,
+      timestamp: acceptedTimeStr,
+      subtitle: isAccepted
+        ? `Crew assigned and mission accepted`
+        : 'Waiting for rescue unit confirmation',
+      icon: isAccepted ? <FiCheck aria-hidden="true" /> : <FiClock aria-hidden="true" />,
+    },
+    {
+      num: 5,
+      title: '5. Team on the way',
+      isCompleted: isOnSite || isResolved,
+      isActive: isEnRoute && !isOnSite,
+      timestamp: isEnRoute ? (tracker?.etaSeconds != null && tracker.etaSeconds > 0 ? `ETA: ${formatDuration(tracker.etaSeconds)}` : dispatchedTimeStr) : null,
+      subtitle: isEnRoute ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <span>
+            {tracker?.distanceKm != null ? `${tracker.distanceKm.toFixed(1)} km remaining` : 'Vehicle en route'}
+            {tracker?.etaSeconds != null && tracker.etaSeconds > 0 ? ` · ${formatDuration(tracker.etaSeconds)} away` : ''}
+          </span>
+          {tracker?.truckProgress != null && (
+            <div style={{ height: '6px', width: '100%', backgroundColor: 'var(--color-surface-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  height: '100%',
+                  width: `${Math.min(100, Math.max(0, tracker.truckProgress))}%`,
+                  backgroundColor: 'var(--color-primary)',
+                  transition: 'width 0.4s ease',
+                }}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        'Awaiting deployment dispatch'
+      ),
+      icon: (isOnSite || isResolved) ? <FiCheck aria-hidden="true" /> : <FiTruck aria-hidden="true" />,
+    },
+    {
+      num: 6,
+      title: '6. Team on site / Rescue in progress',
+      isCompleted: isResolved,
+      isActive: isOnSite && !isResolved,
+      timestamp: isOnSite ? (tracker?.workTimeRemainingSeconds != null && tracker.workTimeRemainingSeconds > 0 ? `${tracker.workTimeRemainingSeconds}s remaining` : arrivedTimeStr) : null,
+      subtitle: isOnSite ? (
+        <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+          Rescuers active on scene. Emergency extraction in progress.
+          {tracker?.workTimeRemainingSeconds != null && tracker.workTimeRemainingSeconds > 0 ? ` Work timer: ${tracker.workTimeRemainingSeconds}s` : ''}
+        </span>
+      ) : (
+        'Responders will verify upon arrival'
+      ),
+      icon: isResolved ? <FiCheck aria-hidden="true" /> : <FiActivity aria-hidden="true" />,
+    },
+    {
+      num: 7,
+      title: '7. Completed',
+      isCompleted: isResolved,
+      isActive: false,
+      timestamp: resolvedTimeStr,
+      subtitle: isResolved
+        ? 'Rescue operation concluded successfully'
+        : 'Pending on-site resolution',
+      icon: isResolved ? <FiCheckCircle aria-hidden="true" /> : <FiCheck aria-hidden="true" />,
+    },
+  ];
 
   return (
     <div
@@ -62,43 +289,42 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-secondary)', letterSpacing: '0.5px' }}>
-          Delivery Verification
+          Rescue Mission Lifecycle
         </span>
         {reportId && (
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-info)' }}>
+          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-primary)' }}>
             #{reportId.slice(0, 10)}
           </span>
         )}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
-        {stages.map((st) => {
-          const isDone = currentIdx >= st.index;
-          const isCurrent = currentIdx === st.index;
-
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative' }}>
+        {steps.map((st) => {
           let iconBg = 'var(--color-surface-subtle)';
           let iconColor = 'var(--color-text-muted)';
-          let iconContent = '○';
+          let borderColor = 'transparent';
 
-          if (isDone) {
+          if (st.isCompleted) {
             iconBg = 'var(--color-success)';
             iconColor = '#ffffff';
-            iconContent = '✓';
-          } else if (isCurrent) {
-            iconBg = 'var(--color-warning)';
+          } else if (st.isActive) {
+            iconBg = 'var(--color-primary)';
             iconColor = '#ffffff';
-            iconContent = '●';
+            borderColor = 'rgba(37, 99, 235, 0.2)';
           }
 
           return (
             <div
-              key={st.key}
+              key={st.num}
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '12px',
+                position: 'relative',
+                opacity: st.isCompleted || st.isActive ? 1 : 0.65,
               }}
             >
+              {/* Step Icon Badge */}
               <div
                 style={{
                   width: '28px',
@@ -109,28 +335,43 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 700,
+                  fontSize: '13px',
                   flexShrink: 0,
-                  marginTop: '2px',
+                  boxShadow: st.isActive ? '0 0 0 3px rgba(37, 99, 235, 0.25)' : 'none',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                {iconContent}
+                {st.icon}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <span
-                  style={{
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: isCurrent || isDone ? 700 : 500,
-                    color: isDone ? 'var(--color-text-primary)' : (isCurrent ? 'var(--color-warning)' : 'var(--color-text-muted)'),
-                  }}
-                >
-                  {st.title}
-                </span>
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+              {/* Text & Timestamps */}
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                  <span
+                    style={{
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: st.isCompleted || st.isActive ? 700 : 500,
+                      color: st.isCompleted ? 'var(--color-text-primary)' : (st.isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
+                    }}
+                  >
+                    {st.title}
+                  </span>
+                  {st.timestamp && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: st.isCompleted ? 'var(--color-text-secondary)' : 'var(--color-primary)',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {st.timestamp}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                   {st.subtitle}
-                </span>
+                </div>
               </div>
             </div>
           );

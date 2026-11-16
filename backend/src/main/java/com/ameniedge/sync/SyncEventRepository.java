@@ -13,3 +13,4 @@ public interface SyncEventRepository extends JpaRepository<SyncEvent, String> {
     List<SyncEvent> findByProcessedFalseOrderByCreatedAtAsc();
     long countByProcessedFalse();
 }
+

@@ -41,3 +41,4 @@ python download_tiles.py --bbox 13.04,80.20,13.12,80.30 --min-zoom 12 --max-zoom
 ## 4. Pre-packaged Layers
 - `shelters.geojson`: Verified emergency evacuation centers with capacity, water, generator, and medical status.
 - `hazards.geojson`: Active and historic flood inundation zones, washed-out bridges, and high-voltage hazards.
+

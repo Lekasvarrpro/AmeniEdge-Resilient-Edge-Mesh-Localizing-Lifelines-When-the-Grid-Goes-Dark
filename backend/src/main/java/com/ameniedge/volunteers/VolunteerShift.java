@@ -55,3 +55,4 @@ public class VolunteerShift {
     public String getSkillsApplied() { return skillsApplied; }
     public void setSkillsApplied(String skillsApplied) { this.skillsApplied = skillsApplied; }
 }
+

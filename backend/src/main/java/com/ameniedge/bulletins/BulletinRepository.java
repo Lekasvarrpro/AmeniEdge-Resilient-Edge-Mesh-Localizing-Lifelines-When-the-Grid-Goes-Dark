@@ -10,3 +10,4 @@ public interface BulletinRepository extends JpaRepository<Bulletin, String> {
     List<Bulletin> findAllByOrderByPublishedAtDesc();
     List<Bulletin> findByStationIdOrderByPublishedAtDesc(String stationId);
 }
+

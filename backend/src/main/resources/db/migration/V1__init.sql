@@ -1,5 +1,8 @@
 -- AmeniEdge Core Relational & Geospatial Schema
--- Migration V1: Base Tables, Foreign Keys, and Indexes
+-- Migration V1: Base Tables, Foreign Keys, Geospatial PostGIS, and Indexes
+
+-- Enable PostGIS geospatial extension for emergency spatial queries and radius filters
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS regions (
     id VARCHAR(64) PRIMARY KEY,

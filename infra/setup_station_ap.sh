@@ -72,3 +72,4 @@ echo " SSID: AmeniEdge-Station-North-SOS"
 echo " IP: 192.168.4.1"
 echo " Captive Portal will automatically redirect phones to /sos"
 echo "=========================================================="
+

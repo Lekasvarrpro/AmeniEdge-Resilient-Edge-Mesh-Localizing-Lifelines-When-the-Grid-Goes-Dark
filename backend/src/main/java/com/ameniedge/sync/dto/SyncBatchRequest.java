@@ -48,3 +48,4 @@ public class SyncBatchRequest {
         public void setVectorSequence(long vectorSequence) { this.vectorSequence = vectorSequence; }
     }
 }
+

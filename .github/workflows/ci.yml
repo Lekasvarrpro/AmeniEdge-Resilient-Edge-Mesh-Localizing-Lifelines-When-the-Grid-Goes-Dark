@@ -36,9 +36,19 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
-      - name: Typecheck and Build
+      - name: Lint and Typecheck
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Check Emoji Restrictions
+        working-directory: ./frontend
+        run: npm run check:emoji
+
+      - name: Build PWA Production Bundle
         working-directory: ./frontend
         run: npm run build
+
       - name: Run Unit Tests
         working-directory: ./frontend
         run: npm run test:unit
+

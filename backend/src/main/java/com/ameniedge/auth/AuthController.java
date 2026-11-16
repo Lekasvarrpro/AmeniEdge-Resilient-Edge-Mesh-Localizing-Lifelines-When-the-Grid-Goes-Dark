@@ -4,6 +4,8 @@ import com.ameniedge.auth.dto.AuthResponse;
 import com.ameniedge.auth.dto.LoginRequest;
 import com.ameniedge.auth.dto.RegisterRequest;
 import com.ameniedge.common.ApiResponse;
+import com.ameniedge.organization.Team;
+import com.ameniedge.organization.TeamRepository;
 import com.ameniedge.users.User;
 import com.ameniedge.users.UserService;
 import jakarta.validation.Valid;
@@ -27,16 +29,19 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final TeamRepository teamRepository;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             UserService userService,
             PasswordEncoder passwordEncoder,
-            JwtTokenProvider tokenProvider) {
+            JwtTokenProvider tokenProvider,
+            TeamRepository teamRepository) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.teamRepository = teamRepository;
     }
 
     @PostMapping("/login")
@@ -49,6 +54,12 @@ public class AuthController {
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         String jwt = tokenProvider.generateToken(principal);
 
+        String teamId = principal.getTeamId();
+        String teamName = null;
+        if (teamId != null) {
+            teamName = teamRepository.findById(teamId).map(Team::getName).orElse(null);
+        }
+
         AuthResponse response = new AuthResponse(
                 jwt,
                 UUID.randomUUID().toString(),
@@ -56,7 +67,9 @@ public class AuthController {
                 principal.getUsername(),
                 principal.getFullName(),
                 principal.getRole(),
-                principal.getStationId()
+                principal.getStationId(),
+                teamId,
+                teamName
         );
 
         return ResponseEntity.ok(ApiResponse.ok("Login successful", response));
@@ -81,6 +94,12 @@ public class AuthController {
         UserPrincipal principal = new UserPrincipal(saved);
         String jwt = tokenProvider.generateToken(principal);
 
+        String teamId = saved.getTeamId();
+        String teamName = null;
+        if (teamId != null) {
+            teamName = teamRepository.findById(teamId).map(Team::getName).orElse(null);
+        }
+
         AuthResponse response = new AuthResponse(
                 jwt,
                 UUID.randomUUID().toString(),
@@ -88,7 +107,9 @@ public class AuthController {
                 saved.getUsername(),
                 saved.getFullName(),
                 saved.getRole(),
-                saved.getStationId()
+                saved.getStationId(),
+                teamId,
+                teamName
         );
 
         return new ResponseEntity<>(ApiResponse.ok("Registration successful", response), HttpStatus.CREATED);

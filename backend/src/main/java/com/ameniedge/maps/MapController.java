@@ -6,8 +6,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,20 +16,27 @@ import java.nio.file.Paths;
 @RequestMapping("/api/v1/maps")
 public class MapController {
 
-    private static final String TILES_BASE_PATH = "map-data/tiles";
+    private static final String TILES_DIR = "map-data/tiles";
     private static final String SHELTERS_PATH = "map-data/shelters.geojson";
     private static final String HAZARDS_PATH = "map-data/hazards.geojson";
 
+    private Path resolvePath(String relativePath) {
+        Path p1 = Paths.get(relativePath);
+        if (Files.exists(p1)) return p1;
+        Path p2 = Paths.get("..", relativePath);
+        if (Files.exists(p2)) return p2;
+        return p1;
+    }
+
     @GetMapping(value = "/tiles/{z}/{x}/{y}", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getMapTile(
+    public ResponseEntity<?> getMapTile(
             @PathVariable int z,
             @PathVariable int x,
             @PathVariable int y) {
 
-        Path tilePath = Paths.get(TILES_BASE_PATH, String.valueOf(z), String.valueOf(x), y + ".png");
-        File tileFile = tilePath.toFile();
+        Path tilePath = resolvePath(Paths.get(TILES_DIR, String.valueOf(z), String.valueOf(x), y + ".png").toString());
 
-        if (tileFile.exists() && tileFile.canRead()) {
+        if (Files.exists(tilePath) && Files.isReadable(tilePath)) {
             try {
                 byte[] bytes = Files.readAllBytes(tilePath);
                 HttpHeaders headers = new HttpHeaders();
@@ -38,24 +45,12 @@ public class MapController {
             } catch (IOException ignored) {}
         }
 
-        // Resilient Fallback: Generate a clean 1x1 transparent/tinted PNG tile dynamically if tile is absent
-        // PNG 1x1 data with soft grey pixel
-        byte[] minimalPng = new byte[]{
-                (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, (byte) 0xC4,
-                (byte) 0x89, 0x00, 0x00, 0x00, 0x0B, 0x49, 0x44, 0x41,
-                0x54, 0x78, (byte) 0x9C, 0x63, 0x60, 0x60, 0x60, 0x00,
-                0x00, 0x00, 0x04, 0x00, 0x01, 0x27, 0x34, 0x27,
-                0x0A, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
-                0x44, (byte) 0xAE, 0x42, 0x60, (byte) 0x82
-        };
-
-        return ResponseEntity.ok()
+        // Redirect to OpenStreetMap tile server for online dev mode
+        String osmUrl = String.format("https://tile.openstreetmap.org/%d/%d/%d.png", z, x, y);
+        return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
+                .location(URI.create(osmUrl))
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
-                .contentType(MediaType.IMAGE_PNG)
-                .body(minimalPng);
+                .build();
     }
 
     @GetMapping(value = "/layers/shelters", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -106,7 +101,7 @@ public class MapController {
     }
 
     private ResponseEntity<String> readFileOrFallback(String filePath, String fallbackJson) {
-        Path path = Paths.get(filePath);
+        Path path = resolvePath(filePath);
         if (Files.exists(path)) {
             try {
                 return ResponseEntity.ok(Files.readString(path));
@@ -115,3 +110,4 @@ public class MapController {
         return ResponseEntity.ok(fallbackJson);
     }
 }
+

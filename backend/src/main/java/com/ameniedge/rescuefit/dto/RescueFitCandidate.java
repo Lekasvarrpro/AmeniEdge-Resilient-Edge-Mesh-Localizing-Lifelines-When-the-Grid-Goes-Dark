@@ -36,3 +36,4 @@ public class RescueFitCandidate {
     public boolean isStaleTelemetry() { return isStaleTelemetry; }
     public void setStaleTelemetry(boolean staleTelemetry) { isStaleTelemetry = staleTelemetry; }
 }
+

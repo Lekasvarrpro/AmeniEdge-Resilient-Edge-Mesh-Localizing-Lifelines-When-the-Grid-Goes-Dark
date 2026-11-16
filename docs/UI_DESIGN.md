@@ -210,3 +210,35 @@ AmeniEdge layouts adapt fluidly across seven standardized breakpoints:
 - **Lighthouse Targets**: Accessibility >= 95, Performance >= 85, PWA >= 90.
 - **RTL Support**: Built using CSS logical properties (`margin-inline-start`, `padding-inline`, `text-align: start`).
 - **Screen Reader Announcements**: Live region (`aria-live="polite"`) updates for connectivity status transitions and SOS confirmation events.
+
+---
+
+## 7. Dark Bento Grid Command Center & Expanded Rescue Operations Suite
+
+### Bento Grid Design Tokens
+- Canvas Background: `--color-dash-bg: #090B10`
+- Bento Card Surface: `--color-dash-card: #121620`
+- Elevated Control Surface: `--color-dash-surface: #19202E`
+- Bento Border: `--color-dash-border: #1F2737`
+- High-Intensity Accent: `--color-dash-accent-blue: #2563EB`
+- Typography: `#F8FAFC` high-contrast text with muted slate `#94A3B8` secondary labels.
+
+### Modular Command Components (`src/components/dashboard/`)
+1. **`Sidebar`**: Left navigation drawer with collapsible mobile toggle, brand badge, user role pill (`STATION_LEADER`, `REGIONAL_SUPERVISOR`, `ORGANIZATION_ADMIN`), dark/light theme switch, and live edge mesh status indicator.
+2. **`Topbar`**: Operational sector dropdown pill, quick search input, tactical layer toggles, and high-visibility emergency broadcast button.
+3. **`StatCard`**: High-density KPI metric tile featuring value, trend indicator percentage pill, sub-state counter chips, and animated glowing SVG waveform sparkline with target peak marker.
+4. **`ChartCard`**: Vector graphics analytics cards including a semi-circular SVG capacity gauge with colored arc milestones and vertical rounded category breakdown bars.
+5. **`ActivityList`**: Tactical feed featuring the RescueFit AI Dispatch Intelligence card with blue radial backglow, status pills, and direct dispatch action triggers.
+6. **`DataTableCard`**: Dark Bento command table with column sorting, priority badges, category icons, and single-click incident selection.
+
+### Expanded 8-Page Rescue Team Operations Experience (`/team`)
+1. **Current Mission (Home)**: Active dispatch card with mission dossier specs, one-click `✓ ACCEPT MISSION` and `Decline` triggers, and a 4-step deployment progress tracker (`ACCEPTED` -> `EN ROUTE` -> `ON SITE` -> `ASSISTING` -> `RESOLVED`).
+2. **Assignments Repository**: Filterable tabs for `Pending`, `Active`, `Completed`, and `Declined` dispatches.
+3. **Mission Dossier (Detail)**: Full incident briefing with victim details, access route conditions, required specialized equipment, and offline Leaflet coordinate pin.
+4. **Tactical Map**: Full-screen offline Leaflet map with incident markers, safety shelters, and water hazard perimeters.
+5. **Crew & Gear (Team)**: Roster of active responders, certifications, deployed gear inventory, and one-tap team readiness state toggle (`AVAILABLE`, `BUSY`, `OFF_DUTY`).
+6. **Mission Log (History)**: Chronological mission outcome history recording resolution times, rescued count, and decline justifications with timestamps.
+7. **Alerts & Bulletins (Notifications)**: Real-time broadcast inbox with severity filters (`CRITICAL`, `WARNING`, `INFO`).
+8. **Settings & Profile**: Local storage telemetry controls, offline tile package manager, VHF channel selection, and authenticated logout.
+
+

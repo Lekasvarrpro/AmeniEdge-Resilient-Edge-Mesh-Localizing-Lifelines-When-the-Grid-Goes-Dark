@@ -74,3 +74,4 @@ public class VolunteerController {
         public void setSkillsApplied(String skillsApplied) { this.skillsApplied = skillsApplied; }
     }
 }
+

@@ -24,3 +24,4 @@ public class RescueFitExclusion {
     public String getPotentialSupportRole() { return potentialSupportRole; }
     public void setPotentialSupportRole(String potentialSupportRole) { this.potentialSupportRole = potentialSupportRole; }
 }
+

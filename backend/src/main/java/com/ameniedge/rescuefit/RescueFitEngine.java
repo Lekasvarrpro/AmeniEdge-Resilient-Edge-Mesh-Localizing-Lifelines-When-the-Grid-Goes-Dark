@@ -75,13 +75,14 @@ public class RescueFitEngine {
             ));
         }
 
-        // Hard Filter 2: Mandatory Skills & Equipment per Category
+        // Hard Filter 2: Mandatory Skills & Equipment per Category (Part 3 Routing Rules)
         String capabilities = team.getCapabilities() != null ? team.getCapabilities().toUpperCase() : "";
         String equipment = team.getEquipment() != null ? team.getEquipment().toUpperCase() : "";
 
         if (incident.getCategory() == IncidentCategory.FLOOD) {
-            boolean hasWaterSkill = capabilities.contains("SWIFT_WATER_RESCUE") || capabilities.contains("BOAT_OPERATION") || capabilities.contains("DIVING");
-            if (!hasWaterSkill) {
+            boolean hasFloodSkill = capabilities.contains("FLOOD") || capabilities.contains("SWIFT_WATER_RESCUE") ||
+                    capabilities.contains("BOAT_OPERATION") || capabilities.contains("WATER_EXTRACTION") || capabilities.contains("DIVING");
+            if (!hasFloodSkill) {
                 return EvaluationResult.exclude(new RescueFitExclusion(
                         team.getId(),
                         team.getName(),
@@ -89,27 +90,51 @@ public class RescueFitEngine {
                         "Perimeter security, crowd control, or relief shelter support"
                 ));
             }
-
-            boolean hasBoatOrHighClearance = equipment.contains("BOAT") || equipment.contains("ZODIAC") ||
-                    equipment.contains("DINGHY") || equipment.contains("HIGH_CLEARANCE") || equipment.contains("LIFE_JACKETS");
-            if (!hasBoatOrHighClearance) {
+        } else if (incident.getCategory() == IncidentCategory.FIRE) {
+            boolean hasFireSkill = capabilities.contains("FIRE") || capabilities.contains("FIRE_SUPPRESSION") ||
+                    capabilities.contains("EXTRICATION");
+            if (!hasFireSkill) {
                 return EvaluationResult.exclude(new RescueFitExclusion(
                         team.getId(),
                         team.getName(),
-                        "Excluded: Lacks required watercraft or high-clearance flood vehicle",
-                        "Ground triage and casualty reception at safe water boundary"
+                        "Excluded: Lacks fire suppression or hazardous extrication training",
+                        "Perimeter cordon and evacuation support"
                 ));
             }
-        } else if (incident.getCategory() == IncidentCategory.STRUCTURAL_COLLAPSE || incident.getCategory() == IncidentCategory.TRAPPED) {
-            boolean hasCollapseSkill = capabilities.contains("STRUCTURAL_SEARCH") || capabilities.contains("TRIAGE") || capabilities.contains("EXTRICATION");
-            if (!hasCollapseSkill) {
+        } else if (incident.getCategory() == IncidentCategory.MEDICAL) {
+            boolean hasMedicalSkill = capabilities.contains("MEDICAL") || capabilities.contains("TRIAGE") ||
+                    capabilities.contains("TRAUMA_CARE") || capabilities.contains("EMT") || capabilities.contains("PARAMEDIC") ||
+                    capabilities.contains("FIRST_AID");
+            if (!hasMedicalSkill) {
                 return EvaluationResult.exclude(new RescueFitExclusion(
                         team.getId(),
                         team.getName(),
-                        "Excluded: Lacks heavy urban search & extrication training",
-                        "Secondary cordon and first-aid support"
+                        "Excluded: Lacks emergency medical triage and trauma paramedic training",
+                        "Patient transport assistance"
                 ));
             }
+        } else if (incident.getCategory() == IncidentCategory.TRAPPED ||
+                   incident.getCategory() == IncidentCategory.MISSING ||
+                   incident.getCategory() == IncidentCategory.STRUCTURAL_COLLAPSE) {
+            boolean hasSarSkill = capabilities.contains("TRAPPED") || capabilities.contains("MISSING") ||
+                    capabilities.contains("STRUCTURAL_SEARCH") || capabilities.contains("URBAN_SAR") ||
+                    capabilities.contains("EXTRICATION") || capabilities.contains("DEBRIS_CLEARING");
+            if (!hasSarSkill) {
+                return EvaluationResult.exclude(new RescueFitExclusion(
+                        team.getId(),
+                        team.getName(),
+                        "Excluded: Lacks urban search & rescue (USAR) / extrication training",
+                        "Secondary cordon and casualty reception support"
+                ));
+            }
+        } else if (incident.getCategory() == IncidentCategory.OTHER) {
+            // Category OTHER defaults to Station leader manual triage
+            return EvaluationResult.exclude(new RescueFitExclusion(
+                    team.getId(),
+                    team.getName(),
+                    "Excluded: Category OTHER requires station leader manual assessment",
+                    "Awaiting human triage and tactical direction"
+            ));
         }
 
         // Calculate Proximity and ETA
@@ -132,17 +157,24 @@ public class RescueFitEngine {
         }
 
         // Soft Scoring Matrix (Range 0.0 to 1.0)
-        // Score = Proximity (50%) + Availability/Workload (30%) + Equipment/Skill Match (20%)
+        // Score = Proximity (50%) + Station jurisdiction bonus (20%) + Availability/Workload (20%) + Equipment/Skill (10%)
         double proximityScore = 1.0 / (1.0 + (distanceMeters / 1000.0));
+        double stationBonus = (incident.getStationId() != null && incident.getStationId().equals(team.getStationId())) ? 1.0 : 0.6;
         double workloadScore = 1.0; // Since activeIncidentCount == 0 for eligible teams
         double equipmentScore = 0.95;
 
-        double fitScore = Math.round(((proximityScore * 0.5) + (workloadScore * 0.3) + (equipmentScore * 0.2)) * 100.0) / 100.0;
+        double fitScore = Math.round(((proximityScore * 0.5) + (stationBonus * 0.2) + (workloadScore * 0.2) + (equipmentScore * 0.1)) * 100.0) / 100.0;
 
         StringBuilder rationale = new StringBuilder();
         rationale.append("Verified for ").append(incident.getCategory()).append(" response. ");
         if (incident.getCategory() == IncidentCategory.FLOOD) {
             rationale.append("Swift-water certified with aquatic craft. ");
+        } else if (incident.getCategory() == IncidentCategory.FIRE) {
+            rationale.append("Fire tender and thermal suppression equipped. ");
+        } else if (incident.getCategory() == IncidentCategory.MEDICAL) {
+            rationale.append("Trauma paramedic with rapid transit unit. ");
+        } else if (incident.getCategory() == IncidentCategory.TRAPPED || incident.getCategory() == IncidentCategory.MISSING) {
+            rationale.append("USAR extraction and technical search trained. ");
         }
         rationale.append("Available status. Estimated ETA: ").append(etaMinutes).append(" mins (").append(distanceMeters).append("m). ");
         if (isStale) {

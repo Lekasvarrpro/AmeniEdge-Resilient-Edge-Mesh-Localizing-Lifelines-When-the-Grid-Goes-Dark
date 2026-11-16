@@ -37,10 +37,3 @@ INSERT INTO bulletins (id, title, content, severity, station_id, published_by) V
 ('BLT-001', 'Station North Wi-Fi Operational - Emergency Mesh Active', 'Cellular towers offline across North Chennai. Station North Wi-Fi (SSID: AmeniEdge-Station-North-SOS) is active on emergency generator backup. Submit SOS or visit St. Mary Relief Camp.', 'INFO', 'STA-CHN-N-001', 'USR-LDR-001'),
 ('BLT-002', 'Urgent Flood Alert: River Otteri Overflowing', 'Otteri Nullah water levels exceeding danger mark by 1.8m. Evacuate low-lying ground floors immediately.', 'DANGER', 'STA-CHN-N-001', 'USR-LDR-001')
 ON CONFLICT (id) DO NOTHING;
-
--- 6. Initial Incidents
-INSERT INTO incidents (id, client_reference_id, station_id, category, priority, status, affected_people, latitude, longitude, location_landmark, details, contact_name, contact_phone, has_immediate_danger, assigned_team_id) VALUES
-('INC-1001', 'e9c8e1a1-3b74-4b57-bc01-9a70659a0001', 'STA-CHN-N-001', 'FLOOD', 'P1_CRITICAL', 'RECEIVED', 4, 13.0895, 80.2715, 'Basin Bridge 2nd Cross, Near Water Tank', 'Water reached 1st floor balcony. 2 elderly and 2 children stranded without drinking water.', 'Karthik Raja', '+91-98401-11111', TRUE, NULL),
-('INC-1002', 'e9c8e1a1-3b74-4b57-bc01-9a70659a0002', 'STA-CHN-N-001', 'MEDICAL', 'P1_CRITICAL', 'ASSIGNED', 1, 13.0840, 80.2650, 'Royapuram Police Station Road #12', '72yo diabetic woman with breathing difficulty. Power failure stopped oxygen unit.', 'Revathi S', '+91-98402-22222', TRUE, 'TEAM-CHN-N-003'),
-('INC-1003', 'e9c8e1a1-3b74-4b57-bc01-9a70659a0003', 'STA-CHN-N-001', 'OTHER', 'P3_ROUTINE', 'TRIAGED', 0, 13.0780, 80.2740, 'Walltax Road Intersection', 'Massive banyan tree fallen across both lanes. Fire tender cannot pass.', 'Traffic Warden Ravi', '+91-98403-33333', FALSE, NULL)
-ON CONFLICT (id) DO NOTHING;

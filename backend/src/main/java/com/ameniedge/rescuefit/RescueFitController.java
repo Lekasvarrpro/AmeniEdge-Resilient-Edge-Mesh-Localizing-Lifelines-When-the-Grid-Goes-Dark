@@ -31,3 +31,4 @@ public class RescueFitController {
         return ResponseEntity.ok(ApiResponse.ok("RescueFit recommendations calculated", response));
     }
 }
+

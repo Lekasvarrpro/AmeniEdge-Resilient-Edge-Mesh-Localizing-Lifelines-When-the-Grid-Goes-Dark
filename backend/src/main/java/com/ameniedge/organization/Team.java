@@ -14,6 +14,9 @@ public class Team {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "department")
+    private String department;
+
     @Column(name = "station_id", nullable = false, length = 64)
     private String stationId;
 
@@ -66,7 +69,12 @@ public class Team {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setName(String name) {
+        this.name = name;
+        if (this.department == null) this.department = name;
+    }
+    public String getDepartment() { return department != null ? department : name; }
+    public void setDepartment(String department) { this.department = department; }
     public String getStationId() { return stationId; }
     public void setStationId(String stationId) { this.stationId = stationId; }
     public String getLeaderId() { return leaderId; }
@@ -86,3 +94,4 @@ public class Team {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
+

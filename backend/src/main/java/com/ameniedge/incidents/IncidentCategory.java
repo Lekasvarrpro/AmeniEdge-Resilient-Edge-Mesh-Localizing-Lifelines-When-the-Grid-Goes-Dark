@@ -9,3 +9,4 @@ public enum IncidentCategory {
     STRUCTURAL_COLLAPSE,
     OTHER
 }
+

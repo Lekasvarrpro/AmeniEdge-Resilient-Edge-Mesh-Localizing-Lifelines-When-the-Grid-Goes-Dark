@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 public class CreateIncidentRequest {
     private String clientReferenceId;
     private String stationId;
+    private String region;
 
     @NotNull
     private IncidentCategory category;
@@ -21,6 +22,7 @@ public class CreateIncidentRequest {
     private String contactName;
     private String contactPhone;
     private boolean hasImmediateDanger = false;
+    private java.time.Instant savedAt;
 
     public CreateIncidentRequest() {}
 
@@ -28,6 +30,8 @@ public class CreateIncidentRequest {
     public void setClientReferenceId(String clientReferenceId) { this.clientReferenceId = clientReferenceId; }
     public String getStationId() { return stationId; }
     public void setStationId(String stationId) { this.stationId = stationId; }
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
     public IncidentCategory getCategory() { return category; }
     public void setCategory(IncidentCategory category) { this.category = category; }
     public int getAffectedPeople() { return affectedPeople; }
@@ -46,4 +50,7 @@ public class CreateIncidentRequest {
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
     public boolean isHasImmediateDanger() { return hasImmediateDanger; }
     public void setHasImmediateDanger(boolean hasImmediateDanger) { this.hasImmediateDanger = hasImmediateDanger; }
+    public java.time.Instant getSavedAt() { return savedAt; }
+    public void setSavedAt(java.time.Instant savedAt) { this.savedAt = savedAt; }
 }
+

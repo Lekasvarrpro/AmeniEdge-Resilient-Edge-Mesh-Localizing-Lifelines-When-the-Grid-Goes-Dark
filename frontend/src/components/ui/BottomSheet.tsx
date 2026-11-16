@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { FiX } from 'react-icons/fi';
 
 export interface BottomSheetProps {
   isOpen: boolean;
@@ -95,7 +96,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               justifyContent: 'center',
             }}
           >
-            ✕
+            <FiX aria-hidden="true" />
           </button>
         </div>
 
@@ -104,3 +105,4 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     </div>
   );
 };
+

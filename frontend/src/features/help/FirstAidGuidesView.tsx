@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
+import { FaWater, FaBandAid, FaHeartbeat, FaFire } from 'react-icons/fa';
 
 export const FirstAidGuidesView: React.FC = () => {
   const [activeGuide, setActiveGuide] = useState<string>('FLOOD');
@@ -7,7 +8,9 @@ export const FirstAidGuidesView: React.FC = () => {
   const guides = [
     {
       id: 'FLOOD',
-      title: '🌊 Flood Survival & Water Safety',
+      icon: <FaWater style={{ color: '#38BDF8' }} aria-hidden="true" />,
+      title: 'Flood Survival & Water Safety',
+      shortTitle: 'Flood Survival',
       steps: [
         'Do NOT walk or drive through flowing water. Just 15 cm of moving water can knock an adult down.',
         'If trapped inside a building, move to the highest level. Do NOT climb into a closed attic where rising water can trap you; ensure roof access.',
@@ -17,7 +20,9 @@ export const FirstAidGuidesView: React.FC = () => {
     },
     {
       id: 'BLEEDING',
-      title: '🩹 Severe Bleeding & Hemorrhage Control',
+      icon: <FaBandAid style={{ color: '#EF4444' }} aria-hidden="true" />,
+      title: 'Severe Bleeding & Hemorrhage Control',
+      shortTitle: 'Bleeding Control',
       steps: [
         'Apply firm, continuous direct pressure with a clean cloth or sterile dressing directly over the wound.',
         'Do NOT remove the original cloth if blood soaks through; add more layers on top.',
@@ -27,7 +32,9 @@ export const FirstAidGuidesView: React.FC = () => {
     },
     {
       id: 'CPR',
-      title: '❤️ CPR for Unresponsive Casualty',
+      icon: <FaHeartbeat style={{ color: '#F43F5E' }} aria-hidden="true" />,
+      title: 'CPR for Unresponsive Casualty',
+      shortTitle: 'CPR Protocol',
       steps: [
         'Check for responsiveness: tap shoulders and shout loudly.',
         'Check for normal breathing (no more than 10 seconds).',
@@ -37,7 +44,9 @@ export const FirstAidGuidesView: React.FC = () => {
     },
     {
       id: 'BURNS',
-      title: '🔥 Burn Care & Smoke Inhalation',
+      icon: <FaFire style={{ color: '#F97316' }} aria-hidden="true" />,
+      title: 'Burn Care & Smoke Inhalation',
+      shortTitle: 'Burn Care',
       steps: [
         'Cool the burn under clean, cool running water for at least 10–20 minutes. Do NOT apply ice or butter.',
         'Remove constricting jewelry, belts, or rings before swelling starts.',
@@ -76,6 +85,9 @@ export const FirstAidGuidesView: React.FC = () => {
             key={g.id}
             onClick={() => setActiveGuide(g.id)}
             style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
               padding: '8px 12px',
               borderRadius: 'var(--radius-md)',
               fontSize: 'var(--font-size-xs)',
@@ -86,7 +98,8 @@ export const FirstAidGuidesView: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            {g.title.split(' ')[0]} {g.title.split(' ')[1]}
+            {g.icon}
+            <span>{g.shortTitle}</span>
           </button>
         ))}
       </div>
@@ -96,7 +109,10 @@ export const FirstAidGuidesView: React.FC = () => {
         const guide = guides.find((g) => g.id === activeGuide) || guides[0];
         return (
           <Card style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <h2 style={{ fontSize: 'var(--font-size-md)', fontWeight: 800 }}>{guide.title}</h2>
+            <h2 style={{ fontSize: 'var(--font-size-md)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {guide.icon}
+              <span>{guide.title}</span>
+            </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {guide.steps.map((st, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
@@ -137,3 +153,4 @@ export const FirstAidGuidesView: React.FC = () => {
     </div>
   );
 };
+

@@ -14,6 +14,9 @@ public class User {
     @Column(unique = true, nullable = false, length = 128)
     private String username;
 
+    @Column(name = "email", length = 128)
+    private String email;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -26,6 +29,9 @@ public class User {
 
     @Column(name = "station_id", length = 64)
     private String stationId;
+
+    @Column(name = "team_id", length = 64)
+    private String teamId;
 
     @Column(length = 64)
     private String phone;
@@ -60,7 +66,12 @@ public class User {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public void setUsername(String username) {
+        this.username = username;
+        if (this.email == null) this.email = username;
+    }
+    public String getEmail() { return email != null ? email : username; }
+    public void setEmail(String email) { this.email = email; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getFullName() { return fullName; }
@@ -69,6 +80,8 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public String getStationId() { return stationId; }
     public void setStationId(String stationId) { this.stationId = stationId; }
+    public String getTeamId() { return teamId; }
+    public void setTeamId(String teamId) { this.teamId = teamId; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
     public String getSkills() { return skills; }
@@ -78,3 +91,4 @@ public class User {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
+

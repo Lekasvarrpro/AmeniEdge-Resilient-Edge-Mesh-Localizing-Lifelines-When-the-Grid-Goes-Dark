@@ -26,3 +26,4 @@ public class AuditService {
         return auditLogRepository.findAllByOrderByTimestampDesc();
     }
 }
+

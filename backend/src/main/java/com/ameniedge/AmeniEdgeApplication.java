@@ -11,3 +11,4 @@ public class AmeniEdgeApplication {
         SpringApplication.run(AmeniEdgeApplication.class, args);
     }
 }
+

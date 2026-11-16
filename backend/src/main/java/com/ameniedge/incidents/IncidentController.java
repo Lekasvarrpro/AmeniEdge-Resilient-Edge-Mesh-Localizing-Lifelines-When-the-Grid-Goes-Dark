@@ -4,6 +4,7 @@ import com.ameniedge.auth.UserPrincipal;
 import com.ameniedge.common.ApiResponse;
 import com.ameniedge.incidents.dto.CreateIncidentRequest;
 import com.ameniedge.incidents.dto.IncidentStatusUpdate;
+import com.ameniedge.incidents.dto.ReportTrackerDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,12 @@ public class IncidentController {
         return ResponseEntity.ok(ApiResponse.ok(incident));
     }
 
+    @GetMapping("/{id}/tracker")
+    public ResponseEntity<ApiResponse<ReportTrackerDto>> getReportTracker(@PathVariable String id) {
+        ReportTrackerDto tracker = incidentService.getReportTracker(id);
+        return ResponseEntity.ok(ApiResponse.ok(tracker));
+    }
+
     @GetMapping("/{id}/events")
     public ResponseEntity<ApiResponse<List<IncidentEvent>>> getIncidentEvents(@PathVariable String id) {
         List<IncidentEvent> events = incidentService.getEvents(id);
@@ -75,3 +82,4 @@ public class IncidentController {
         return ResponseEntity.ok(ApiResponse.ok("Status transitioned to " + update.getStatus(), updated));
     }
 }
+

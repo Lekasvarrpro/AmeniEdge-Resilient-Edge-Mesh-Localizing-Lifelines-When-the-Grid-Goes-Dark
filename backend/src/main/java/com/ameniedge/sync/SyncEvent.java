@@ -79,3 +79,4 @@ public class SyncEvent {
     public boolean isConflictFlag() { return conflictFlag; }
     public void setConflictFlag(boolean conflictFlag) { this.conflictFlag = conflictFlag; }
 }
+

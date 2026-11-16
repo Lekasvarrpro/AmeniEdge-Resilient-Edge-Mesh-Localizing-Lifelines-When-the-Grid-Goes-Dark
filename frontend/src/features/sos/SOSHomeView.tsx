@@ -6,6 +6,8 @@ import { ProgressTracker } from '../../components/ui/ProgressTracker';
 import { outboxSync } from '../../lib/offline/outbox';
 import { db, type LocalReport } from '../../lib/db/index';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { FaWater, FaAmbulance, FaFire, FaHouseDamage, FaSearch } from 'react-icons/fa';
+import { FiAlertTriangle, FiMap } from 'react-icons/fi';
 
 export interface SOSHomeViewProps {
   onOpenWizard: (preselectedCategory?: string) => void;
@@ -19,6 +21,7 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
   onOpenMap,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('FLOOD');
+  const [selectedRegion, setSelectedRegion] = useState<string>('North');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Live query for most recent citizen report from Dexie
@@ -26,21 +29,43 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
   const latestReport = recentReports && recentReports.length > 0 ? recentReports[0] : null;
 
   const categories = [
-    { id: 'FLOOD', label: 'Flood / Water', icon: '🌊' },
-    { id: 'MEDICAL', label: 'Medical Alert', icon: '🚑' },
-    { id: 'FIRE', label: 'Fire Outbreak', icon: '🔥' },
-    { id: 'TRAPPED', label: 'People Trapped', icon: '🏚️' },
-    { id: 'MISSING', label: 'Missing Person', icon: '🔍' },
-    { id: 'OTHER', label: 'Other Threat', icon: '⚠️' },
+    { id: 'FLOOD', label: 'Flood / Water', icon: <FaWater /> },
+    { id: 'MEDICAL', label: 'Medical Alert', icon: <FaAmbulance /> },
+    { id: 'FIRE', label: 'Fire Outbreak', icon: <FaFire /> },
+    { id: 'TRAPPED', label: 'People Trapped', icon: <FaHouseDamage /> },
+    { id: 'MISSING', label: 'Missing Person', icon: <FaSearch /> },
+    { id: 'OTHER', label: 'Other Threat', icon: <FiAlertTriangle /> },
   ];
 
-  // Quick 1-tap SOS submission with current GPS
+  // Quick 1-tap SOS submission with current GPS or region
   const handleQuickSOS = async () => {
     setIsSubmitting(true);
     let lat = 13.0827;
     let lng = 80.2707;
+    let stationId: string | undefined = undefined;
+    let region: string | undefined = undefined;
 
-    if ('geolocation' in navigator) {
+    if (selectedRegion === 'North') {
+      lat = 13.0827;
+      lng = 80.2707;
+      stationId = 'STA-CHN-N-001';
+      region = 'North';
+    } else if (selectedRegion === 'South') {
+      lat = 12.9249;
+      lng = 80.1000;
+      stationId = 'STA-CHN-S-002';
+      region = 'South';
+    } else if (selectedRegion === 'East') {
+      lat = 13.1143;
+      lng = 80.2974;
+      stationId = 'STA-CHN-E-003';
+      region = 'East';
+    } else if (selectedRegion === 'West') {
+      lat = 13.1147;
+      lng = 80.1548;
+      stationId = 'STA-CHN-W-004';
+      region = 'West';
+    } else if (selectedRegion === 'GPS' && 'geolocation' in navigator) {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
@@ -48,7 +73,7 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
       } catch {
-        // Fallback to default station coordinates
+        // Fallback to default
       }
     }
 
@@ -59,6 +84,9 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
         latitude: lat,
         longitude: lng,
         hasImmediateDanger: true,
+        locationLandmark: region ? `${region} District Emergency Sector` : 'GPS Coordinates Area',
+        stationId,
+        region,
         details: 'Instant One-Tap SOS emergency alert',
       });
       onViewReport(createdReport);
@@ -136,6 +164,45 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
         </div>
       </div>
 
+      {/* Quick Region Selector Chips */}
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
+          Select Region:
+        </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+          {[
+            { id: 'North', label: 'North' },
+            { id: 'South', label: 'South' },
+            { id: 'East', label: 'East' },
+            { id: 'West', label: 'West' },
+            { id: 'GPS', label: 'GPS' },
+          ].map((r) => {
+            const isSelected = selectedRegion === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setSelectedRegion(r.id)}
+                style={{
+                  minHeight: '38px',
+                  padding: '6px 4px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: isSelected ? 'var(--color-primary-bg, #EFF6FF)' : 'var(--color-surface)',
+                  color: isSelected ? 'var(--color-primary, #2563EB)' : 'var(--color-text-primary)',
+                  border: isSelected ? '2px solid var(--color-primary, #2563EB)' : '1px solid var(--color-border)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: isSelected ? 700 : 500,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                {r.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Action Row: Add Details & View Map */}
       <div style={{ width: '100%', display: 'flex', gap: '10px' }}>
         <Button
@@ -153,7 +220,7 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
           onClick={onOpenMap}
           style={{ flex: 1 }}
         >
-          🗺️ Offline Map
+          <FiMap style={{ marginRight: '6px' }} /> Offline Map
         </Button>
       </div>
 
@@ -173,3 +240,4 @@ export const SOSHomeView: React.FC<SOSHomeViewProps> = ({
     </div>
   );
 };
+

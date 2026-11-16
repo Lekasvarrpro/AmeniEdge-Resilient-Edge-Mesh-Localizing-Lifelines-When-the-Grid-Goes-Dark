@@ -44,3 +44,4 @@ services:
 
 volumes:
   dev_postgres_data:
+

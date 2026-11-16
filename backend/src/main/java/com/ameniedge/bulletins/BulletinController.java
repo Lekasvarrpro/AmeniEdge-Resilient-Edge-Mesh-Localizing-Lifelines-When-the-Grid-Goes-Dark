@@ -45,3 +45,4 @@ public class BulletinController {
         return new ResponseEntity<>(ApiResponse.ok("Bulletin published", saved), HttpStatus.CREATED);
     }
 }
+

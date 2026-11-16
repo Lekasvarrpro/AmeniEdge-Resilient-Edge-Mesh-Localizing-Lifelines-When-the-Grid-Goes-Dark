@@ -17,6 +17,7 @@ public class UserPrincipal implements UserDetails {
     private final String fullName;
     private final Role role;
     private final String stationId;
+    private final String teamId;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(User user) {
@@ -26,6 +27,7 @@ public class UserPrincipal implements UserDetails {
         this.fullName = user.getFullName();
         this.role = user.getRole();
         this.stationId = user.getStationId();
+        this.teamId = user.getTeamId();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
@@ -33,6 +35,7 @@ public class UserPrincipal implements UserDetails {
     public String getFullName() { return fullName; }
     public Role getRole() { return role; }
     public String getStationId() { return stationId; }
+    public String getTeamId() { return teamId; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
@@ -49,3 +52,4 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 }
+

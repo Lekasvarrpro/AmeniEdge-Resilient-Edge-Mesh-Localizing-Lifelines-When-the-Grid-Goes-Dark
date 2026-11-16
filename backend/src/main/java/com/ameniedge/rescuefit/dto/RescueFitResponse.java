@@ -34,3 +34,4 @@ public class RescueFitResponse {
     public String getStationNotice() { return stationNotice; }
     public void setStationNotice(String stationNotice) { this.stationNotice = stationNotice; }
 }
+

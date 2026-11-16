@@ -14,3 +14,4 @@ public interface IncidentRepository extends JpaRepository<Incident, String> {
     List<Incident> findByStatus(IncidentStatus status);
     List<Incident> findByAssignedTeamId(String assignedTeamId);
 }
+

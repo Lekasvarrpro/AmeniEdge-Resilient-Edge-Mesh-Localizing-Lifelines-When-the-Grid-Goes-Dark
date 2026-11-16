@@ -56,3 +56,4 @@ public class Bulletin {
     public Instant getPublishedAt() { return publishedAt; }
     public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
 }
+
